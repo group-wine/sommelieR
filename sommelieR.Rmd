@@ -1,0 +1,27 @@
+---
+title: "sommelieR"
+author: "Group Wine"
+date: "4/25/2019"
+output: html_document
+---
+
+### Introduction  
+We have two datasets which are related to red and white Vinho Verde wines. The datasets contain 11 physiochemical variables: fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, density, pH, sulphates, and alcohol. The outcome variable, wine quality, is an ordinal variable ranging from 0-10, with 0 representing a poor wine and 10 representing an excellent wine. The classes are not balanced. Between the two datasets, there are 6,493 observations. We would like to see if it is possible to predict wine quality using some subset of the physiochemical variables. 
+
+
+### Methods  
+We will fit a proportional odds model and estimate the parameters using the Nelder-Mead method.
+Elastic net will be used for feature selection of the 11 physiochemical variables. The final model will then be used to predict wine quality. Classification will also be done using random forests, and the two misclassifcation rates compared.
+
+
+### Results  
+(3 sections, may also contain some method details)
+
+### Discussion   
+(about interpretation or possible future directions) 
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
