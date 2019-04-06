@@ -11,7 +11,7 @@ library(MASS)
 ```
 
 ```{r}
-red <- read_csv("data/training_data/red_train.csv")
+red <- read_csv("../data/testing_data/red_test.csv")
 ```
 
 

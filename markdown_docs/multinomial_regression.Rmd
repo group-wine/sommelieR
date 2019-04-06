@@ -1,0 +1,61 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(nnet)
+library(tidyverse)
+```
+
+```{r}
+red <- read_csv("data/training_data/red_train.csv")
+```
+
+```{r}
+red_f <- red %>% mutate(quality_f = factor(quality,levels = c("5", "3", "4", "6", "7","8", "9")))
+
+sat <- multinom(quality ~ 1 + alcohol, data = red_f, trace = 1, maxit = 300)
+sat
+
+```
+```{r}
+y = red_f %>% select(quality) %>% 
+  slice(c(1:50))
+
+data_to_mulitnomial <- function(data, formula, intercept = T){
+  vars <- all.vars(formula)
+  response_variable_name <- vars[1]
+  independent_variable_names <- vars[-1]
+  
+  ###Set up y
+  #Get the dependent variable
+  y <- data %>% select(response_variable_name) %>% as.matrix() 
+  #Determine the column in the matrix to which each value of y corresponds
+  positions_y <- rank(unique(y))
+  unique_y <- unique(y)
+  ncols <- y %>% unique() %>% length()
+  nrows <- y %>% length()
+  
+  #Set up empty y matrix
+  multi_y <- matrix(rep(0, ncols*nrows), nrow = nrows, ncol = ncols)
+  for(i in 1:nrows){
+    #Set the j value to be the position associated with the given y_i
+    j <- positions_y[which(unique_y == y[i])]
+    multi_y[i,j] <- 1
+  }
+  
+  ###Set up X
+  X <- model.matrix(formula, data = data)
+  
+  return(list(multi_y, X))
+}
+data_to_mulitnomial(red_f, formula(quality ~ alcohol))
+
+```
+
+```{r}
+
+```
+
