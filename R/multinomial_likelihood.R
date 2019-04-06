@@ -30,4 +30,15 @@ data_to_mulitnomial <- function(data, formula, intercept = T){
   return(list(multi_y, X))
 }
 
+multinomial_log_likelihood <- function(y, X, betas){
+  #This function expects:
+
+  #y should be an (n x (k-1)) matrix for the dependent variable as created by the
+  #data_to_multinomial function, where k is the number of categories for y.
+
+  #X should be an (n x p) matrix, where p is the number of predictors
+
+  #beta should be a ((p + 1) x (k - 1)) matrix.
+}
+
 
