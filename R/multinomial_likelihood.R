@@ -38,7 +38,34 @@ multinomial_log_likelihood <- function(y, X, betas){
 
   #X should be an (n x p) matrix, where p is the number of predictors
 
-  #beta should be a ((p + 1) x (k - 1)) matrix.
+  #beta should be a (p x (k - 1)) matrix.
+
+  n <- nrow(y)
+  l <- c(rep(0, n))
+  for(i in 1:n){
+    l[i] <- (X[i,] %*% beta)[which(y[2,] == 1)] - log(1 + sum(exp(X[i,] %*% beta)))
+  }
+  l_n <- sum(l)
+  return(l_n)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -51,11 +51,37 @@ data_to_mulitnomial <- function(data, formula, intercept = T){
   
   return(list(multi_y, X))
 }
-data_to_mulitnomial(red_f, formula(quality ~ alcohol))
+
 
 ```
 
 ```{r}
+l <- data_to_mulitnomial(red_f, formula(quality ~ alcohol))
+y <- l[[1]]
+X <- l[[2]]
+beta <- matrix(rnorm(rnorm(2*6)), byrow = T, nrow = 2, ncol = 6)
+```
 
+```{r}
+multinomial_log_likelihood <- function(y, X, betas){
+  #This function expects:
+
+  #y should be an (n x (k-1)) matrix for the dependent variable as created by the
+  #data_to_multinomial function, where k is the number of categories for y.
+
+  #X should be an (n x p) matrix, where p is the number of predictors
+
+  #beta should be a (p x (k - 1)) matrix.
+   
+  n <- nrow(y)
+  l <- c(rep(0, n))
+  for(i in 1:n){
+    l[i] <- (X[i,] %*% beta)[which(y[2,] == 1)] - log(1 + sum(exp(X[i,] %*% beta)))
+  }
+  l_n <- sum(l)
+  return(l_n)
+}
+
+multinomial_log_likelihood(y, X, beta)
 ```
 
