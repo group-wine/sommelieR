@@ -57,13 +57,51 @@ data_to_mulitnomial <- function(data, formula, intercept = T){
 
 ```{r}
 l <- data_to_mulitnomial(red_f, formula(quality ~ alcohol))
-y <- l[[1]]
-X <- l[[2]]
-beta <- matrix(rnorm(rnorm(2*6)), byrow = T, nrow = 2, ncol = 6)
+y <- l[[1]][1:10,]
+X <- l[[2]][1:10,]
+beta <- matrix(rnorm(rnorm(2*ncol(X))), byrow = T, nrow = 2, ncol = ncol(y))
 ```
 
 ```{r}
-multinomial_log_likelihood <- function(y, X, betas){
+multinomial_log_likelihood <- function(y, X, b_vector){
+  #This function expects:
+
+  #y should be an (n x (k-1)) matrix for the dependent variable as created by the
+  #data_to_multinomial function, where k is the number of categories for y.
+  
+  #X should be an (n x p) matrix, where p is the number of predictors
+
+  #beta should be a (p x (k - 1)) matrix.
+  beta <- matrix(b_vector, ncol = ncol(y))
+  if(nrow(y)  != nrow(X)){
+    stop("Make sure that X and y have the same number of rows")
+  }
+  
+  if(ncol(y) != ncol(beta)){
+    stop("Make sure y and beta have the same number of columns")
+  }
+  
+  if(ncol(X) != nrow(beta)){
+    stop("Make sure that X and beta have conformable columns and rows")
+  }
+  
+   
+  N <- nrow(y)
+  l <- c(rep(0, N))
+
+  for(i in 1:n){
+    t1 <- (X[i,] %*% beta)[which(y[2,] == 1)]
+    t2 <- log(1 + sum(exp(X[i,] %*% beta)))
+    l[i] <- (X[i,] %*% beta)[which(y[2,] == 1)] - log(1 + sum(exp(X[i,] %*% beta)))
+  }
+  l_n <- sum(l)
+  return(l_n)
+}
+
+multinomial_log_likelihood(y, X, beta)
+```
+```{r}
+mll_gradient <- function(y, X, b_vector){
   #This function expects:
 
   #y should be an (n x (k-1)) matrix for the dependent variable as created by the
@@ -72,16 +110,57 @@ multinomial_log_likelihood <- function(y, X, betas){
   #X should be an (n x p) matrix, where p is the number of predictors
 
   #beta should be a (p x (k - 1)) matrix.
-   
-  n <- nrow(y)
-  l <- c(rep(0, n))
-  for(i in 1:n){
-    l[i] <- (X[i,] %*% beta)[which(y[2,] == 1)] - log(1 + sum(exp(X[i,] %*% beta)))
+  beta <- matrix(b_vector, ncol = ncol(y))
+  if(nrow(y)  != nrow(X)){
+    stop("Make sure that X and y have the same number of rows")
   }
-  l_n <- sum(l)
-  return(l_n)
+  
+  if(ncol(y) != ncol(beta)){
+    stop("Make sure y and beta have the same number of columns")
+  }
+  
+  if(ncol(X) != nrow(beta)){
+    stop("Make sure that X and beta have conformable columns and rows")
+  }
+  
+  #Will return a (p*(k -1) x 1) vector.
+
+ n <- nrow(y)
+ p <- nrow(beta)
+ k_minus_one <- ncol(beta) 
+ g <- matrix(rep(0, k_minus_one))
+ for(j in 1:k_minus_one){
+   element <- rep(0, n)
+   for (i in 1:n){
+     element[i] <- X[i,][j] + (exp(X[i,] %*% beta[,j])*X[i,][j])/(1 + sum(exp(X[1,] %*% beta)))
+   }
+   g[j] <- sum(element)
+ }
+ return(g)
 }
 
-multinomial_log_likelihood(y, X, beta)
+mll_gradient(y, X, b_vector)
+```
+
+```{r}
+library(optimx)
+
+optimx(
+  par = c(rep(1,12)),
+  fn = function(x, y, X){multinomial_log_likelihood(y = y,
+                                                    X = X, 
+                                                    b_vector = x)},
+  gr = function(x, y, X){mll_gradient(y = y,
+                                      X = X, 
+                                      b_vector = x)},
+  y = y, 
+  X = X,
+  method =  "BFGS",
+  control = list(
+    trace = 1,
+    abstol = 10e-5,
+    maximize = T
+  )
+)
 ```
 

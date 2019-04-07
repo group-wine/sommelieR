@@ -49,7 +49,19 @@ multinomial_log_likelihood <- function(y, X, betas){
   return(l_n)
 }
 
+mll_gradient <- function(y, X, betas){
+  #This function expects:
 
+  #y should be an (n x (k-1)) matrix for the dependent variable as created by the
+  #data_to_multinomial function, where k is the number of categories for y.
+
+  #X should be an (n x p) matrix, where p is the number of predictors
+
+  #beta should be a (p x (k - 1)) matrix.
+
+ n <- nrow(y)
+ g <- matrix(rep(0, ncol(betas)))
+}
 
 
 
