@@ -1,0 +1,73 @@
+---
+title: "Checking Proportional Odds Assumptions"
+output: html_notebook
+---
+
+
+
+```{r}
+library(tidyverse)
+library(MASS)
+```
+
+```{r}
+red <- read_csv("../data/testing_data/red_test.csv")
+```
+
+
+```{r}
+collapsed_three <- red %>% 
+  mutate(three_or_not = if_else(quality == 3 | quality == , 1, 0),
+         
+         
+         four_or_not = if_else(quality == 4,1,0),
+         five_or_not = if_else(quality == 5, 1, 0),
+         six_or_not = if_else(quality == 6, 1, 0),
+         seven_or_not = if_else(quality == 7,1,0),
+         eight_or_not = if_else(quality == 8,1,0))
+
+collapsed_four <- red %>% 
+  mutate(four_or_not = if_else(quality == 4, 1, 0))
+```
+
+```{r}
+three_coef <- glm(three_or_not ~ . - quality, data = collapsed_three, family = "binomial") %>% 
+  coef()
+
+four_coef <- glm(four_or_not ~ . - quality, data = collapsed_four, family = "binomial") %>% 
+  coef()
+```
+
+```{r}
+tibble(
+  three_coef = three_coef,
+  four_coef = four_coef
+)
+```
+
+
+
+```{r}
+three_level <- red %>% 
+  mutate(q_c3 = case_when(
+    quality <= 4 ~ "bad_wine",
+    quality %in% c(5:6) ~ "average_wine",
+    quality >= 7 ~ "good_wine"
+  ),
+  collapse_bad = if_else(q_c3 == "bad_wine", 1, 0),
+  collapse_average = if_else(q_c3 == "average_wine", 1, 0), 
+  collapse_good = if_else(q_c3 == "good_wine", 1, 0))
+
+
+tibble(
+good = coef(glm(collapse_good ~ . - collapse_bad - collapse_average - quality - q_c3,
+               data = three_level, family = "binomial")),
+
+average = coef(glm(collapse_average ~ . - collapse_bad - collapse_good - quality - q_c3, data = three_level, family = "binomial")),
+
+bad = coef(glm(collapse_bad ~ . - collapse_good - collapse_average - quality - q_c3, 
+         data = three_level, family = "binomial"))
+)
+```
+
+
