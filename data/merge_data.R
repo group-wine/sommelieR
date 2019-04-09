@@ -31,5 +31,5 @@ all_test$type <- as.factor(all_test$type)
 all_test$quality <- as.factor(all_test$quality)
 
 # write to data folder
-write.csv(all_train, file = "data/training_data/all_train.csv")
-write.csv(all_test, file = "data/testing_data/all_test.csv")
+write.csv(all_train, file = "data/training_data/all_train.csv", row.names = FALSE)
+write.csv(all_test, file = "data/testing_data/all_test.csv", row.names = FALSE)
