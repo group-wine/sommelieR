@@ -5,7 +5,7 @@ source("./R/partial.prop.odds.ll.R")
 source("./R/partial.prop.odds.mod.R")
 
 #read in data
-red <- read.table("/Users/michael.nodzenski/Documents/BIOS Coursework/2019/Spring/BIOS_735/sommelieR/data/winequality-red.csv", header = T, sep = ";")
+red <- read.table("data/training_data/red_train.csv", header = T, sep = ",")
 
 #collapse categories
 red$quality3 <- ifelse(red$quality < 5, 0, ifelse(red$quality < 7, 1, 2))
