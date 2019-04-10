@@ -14,6 +14,12 @@ We will fit a proportional odds model and estimate the parameters using the Neld
 Elastic net will be used for feature selection of the 11 physiochemical variables. The final model will then be used to predict wine quality. Classification will also be done using random forests, and the two misclassifcation rates compared.
 
 
+###Red predictors
+Preidctors included in the likelihood based models for red wine: volatile_acidity, total_sulfur_dioxide, pH, alcohol, sulfates.
+
+###White predictors
+Predictors included in the pH, density, volatile_acidity, residual_sugar, alcohol.
+
 ### Results  
 (3 sections, may also contain some method details)
 
@@ -24,4 +30,6 @@ Elastic net will be used for feature selection of the 11 physiochemical variable
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+
 

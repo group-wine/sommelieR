@@ -14,12 +14,13 @@ red <- read_csv("../data/training_data/red_train.csv")
 ```
 
 ```{r}
-red_f <- red %>% mutate(quality_f = factor(quality,levels = c("5", "3", "4", "6", "7","8", "9")))
+red_f <- red %>% mutate(quality_f = factor(quality,levels = c("8", "3", "4","5", "6", "7")))
 
-sat <- multinom(quality ~ 1 + alcohol, data = red_f, trace = 1, maxit = 300)
-sat
+sat <- multinom(quality_f ~ 1 + alcohol, data = red_f, trace = 1, maxit = 300)
+coef_sat <- t(coef(sat)) %>% matrix(nrow = 1)
 
 ```
+
 ```{r}
 y = red_f %>% select(quality) %>% 
   slice(c(1:50))
@@ -87,7 +88,6 @@ multinomial_log_likelihood <- function(y, X, b_vector){
     stop("Make sure that X and beta have conformable columns and rows")
   }
   
-   
   N <- nrow(y)
   l <- c(rep(0, N))
 
@@ -154,14 +154,14 @@ mll_gradient <- function(y, X, b_vector){
  return(matrix(g, ncol = 1))
 }
 
-mll_gradient(y, X, b_vector)
+
 ```
 
 ```{r}
 library(optimx)
 
 optimx(
-  par = c(rep(1,12)),
+  par = c(coef_sat),
   fn = function(x, y, X){multinomial_log_likelihood(y = y,
                                                     X = X, 
                                                     b_vector = x)},
@@ -170,7 +170,7 @@ optimx(
   #                                     b_vector = x)},
   y = y, 
   X = X,
-  method =  "Nelder-Mead",
+  method =  "BFGS",
   control = list(
     trace = 1,
     abstol = 10e-5,
