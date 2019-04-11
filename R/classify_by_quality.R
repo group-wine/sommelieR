@@ -8,6 +8,9 @@ library(data.table)
 red_train = fread("./data/training_data/red_train.csv",header=T)
 red_test = fread("./data/testing_data/red_test.csv",header=T)
 
+white_train = fread("./data/training_data/white_train.csv",header=T)
+white_test = fread("./data/testing_data/white_test.csv",header=T)
+
 #-----------------------------------------------------------------------------#
 library(caret)
 library(ggplot2)
@@ -58,16 +61,13 @@ cmPlot(class.red, "red", pred_first = TRUE,
 cmPlot(class.white, "white", pred_first = TRUE,
        "RF Classification of Quality for White Wines")
 
-# true classification
-table(red_test$quality)
-table(white_test$quality)
+# prediction accuracy by category
+pred.red <- round(diag(cM.red$table)/table(y.test.red), 4)*100
+pred.white <- round(diag(cM.white$table)/table(y.test.white), 4)*100
 
-# prediction accuracy with 95% CI
-accuracy.red = cM.red$overall[c(1,3,4)]
-accuracy.red
-
-accuracy.white = cM.white$overall[c(1,3,4)]
-accuracy.white
+# prediction accuracy and kappa
+res.red = round(cM.red$overall[1:2], 4)
+res.white = round(cM.white$overall[1:2], 4) 
 
 #-----------------------------------------------------------------------------#
 
@@ -128,16 +128,13 @@ cmPlot(class.red.grp, "red", pred_first = TRUE,
 cmPlot(class.white.grp, "white", pred_first = TRUE,
        "RF Classification of Grouped Quality for White Wines")
 
-# true classification
-table(y.test.red.grp)
-table(y.test.white.grp)
+# prediction accuracy by category
+pred.red.grp <- round(diag(cM.red.grp$table)/table(y.test.red.grp), 4)*100
+pred.white.grp <- round(diag(cM.white.grp$table)/table(y.test.white.grp), 4)*100
 
-# prediction accuracy with 95% CI
-accuracy.red.grp = cM.red.grp$overall[c(1,3,4)]
-accuracy.red.grp
-
-accuracy.white.grp = cM.white.grp$overall[c(1,3,4)]
-accuracy.white.grp
+# prediction accuracy and kappa
+res.red.grp = round(cM.red.grp$overall[1:2], 4)
+res.white.grp = round(cM.white.grp$overall[1:2], 4)
 
 #-----------------------------------------------------------------------------#
 
@@ -176,8 +173,8 @@ y.pred.red.grp.ss <- predict(fit.red.grp.ss, x.test.red)
 y.pred.white.grp.ss <- predict(fit.white.grp.ss, x.test.white)
 
 # results of rf on test data
-cM.red.grp.ss = confusionMatrix(data=y.pred.red.grp.ss, reference=y.test.red.grp)
-cM.white.grp.ss = confusionMatrix(data=y.pred.white.grp.ss, reference=y.test.white.grp)
+cM.red.grp.ss <- confusionMatrix(data=y.pred.red.grp.ss, reference=y.test.red.grp)
+cM.white.grp.ss <- confusionMatrix(data=y.pred.white.grp.ss, reference=y.test.white.grp)
 
 # classification results (into quality score)
 cM.red.grp.ss$table
@@ -194,10 +191,18 @@ cmPlot(class.red.grp.ss, "red", pred_first = TRUE,
 cmPlot(class.white.grp.ss, "white", pred_first = TRUE,
        "RF Classification of Grouped Quality for White Wines \n Subsampled by Group")
 
-# prediction accuracy with 95% CI
-accuracy.red.grp.ss = cM.red.grp.ss$overall[c(1,3,4)]
-accuracy.red.grp.ss
+# prediction accuracy by category
+pred.red.grp.ss <- round(diag(cM.red.grp.ss$table)/table(y.test.red.grp), 4)*100
+pred.white.grp.ss <- round(diag(cM.white.grp.ss$table)/table(y.test.white.grp), 4)*100
 
-accuracy.white.grp.ss = cM.white.grp.ss$overall[c(1,3,4)]
-accuracy.white.grp.ss
+# prediction accuracy and kappa
+res.red.grp.ss <- round(cM.red.grp.ss$overall[1:2],4)
+res.white.grp.ss <- round(cM.white.grp.ss$overall[1:2],4)
+
+
+
+
+
+
+
 

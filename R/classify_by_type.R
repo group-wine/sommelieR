@@ -40,6 +40,6 @@ ggplot(class.table, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, l
   scale_fill_continuous(low="red3", high="lightyellow") + guides(size=FALSE) +
   ggtitle("RF Classification of Wine Type") + theme(plot.title = element_text(hjust=.5, size=20))
 
-# prediction accuracy with 95% CI
-accuracy = cM$overall[c(1,3,4)]
-accuracy
+# classification results
+pred <- round(cM$overall[1:2], 4) # prediction accuracy and kappa
+res <- round(diag(cM$table)/table(y.test), 4)*100 # percent correct into each type
