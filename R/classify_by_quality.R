@@ -10,6 +10,8 @@ red_test = fread("./data/testing_data/red_test.csv",header=T)
 
 #-----------------------------------------------------------------------------#
 library(caret)
+library(ggplot2)
+source("./R/cmPlot_function.R") # required to plot CMs
 
 # set up training and testing data
 x.train.red = as.data.frame(red_train[,1:11], ncol=11)
@@ -51,17 +53,11 @@ class.white <- as.data.frame(cM.white$table)
 class.white$Freq[class.white$Freq == 0] <-NA
 
 # classification results as a plot
-library(ggplot2)
-ggplot(class.red, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
-  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
-  scale_fill_continuous(low="pink1", high="firebrick3") + guides(size=FALSE) +
-  ggtitle("RF Classification of Quality for Red Wines") + theme(plot.title = element_text(hjust=.5, size=20))
+cmPlot(class.red, "red", pred_first = TRUE,
+       "RF Classification of Quality for Red Wines")
+cmPlot(class.white, "white", pred_first = TRUE,
+       "RF Classification of Quality for White Wines")
 
-ggplot(class.white, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
-  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
-  scale_fill_continuous(low="lightyellow", high="goldenrod1") + guides(size=FALSE) +
-  ggtitle("RF Classification of Quality for White Wines") + theme(plot.title = element_text(hjust=.5, size=20))
-  
 # true classification
 table(red_test$quality)
 table(white_test$quality)
@@ -127,15 +123,10 @@ class.white.grp <- as.data.frame(cM.white.grp$table)
 class.white.grp$Freq[class.white.grp$Freq == 0] <-NA
 
 # classification results as a plot
-ggplot(class.red.grp, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
-  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
-  scale_fill_continuous(low="pink1", high="firebrick3") + guides(size=FALSE) +
-  ggtitle("RF Classification of Quality for Red Wines") + theme(plot.title = element_text(hjust=.5, size=20))
-
-ggplot(class.white.grp, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
-  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
-  scale_fill_continuous(low="lightyellow", high="goldenrod1") + guides(size=FALSE) +
-  ggtitle("RF Classification of Quality for White Wines") + theme(plot.title = element_text(hjust=.5, size=20))
+cmPlot(class.red.grp, "red", pred_first = TRUE,
+       "RF Classification of Grouped Quality for Red Wines")
+cmPlot(class.white.grp, "white", pred_first = TRUE,
+       "RF Classification of Grouped Quality for White Wines")
 
 # true classification
 table(y.test.red.grp)
@@ -147,3 +138,66 @@ accuracy.red.grp
 
 accuracy.white.grp = cM.white.grp$overall[c(1,3,4)]
 accuracy.white.grp
+
+#-----------------------------------------------------------------------------#
+
+# Grouped Quality Classifications using Random Forest and Subsampling
+
+#-----------------------------------------------------------------------------#
+
+# subsampled RF classification by group
+
+library(dplyr)
+library(tidyverse)
+
+# subsmaple training data based on minimum within group count
+train.red.grp <- cbind(x.train.red, y.train.red.grp)
+ns.red <- min(table(train.red.grp$y.train.red.grp))
+train.red.grp.ss <- train.red.grp %>% group_by(y.train.red.grp) %>% sample_n(ns.red)
+x.train.red.grp.ss <- as.data.frame(train.red.grp.ss[,1:11], ncol=11)
+y.train.red.grp.ss <- factor(train.red.grp.ss$y.train.red.grp)
+
+train.white.grp <- cbind(x.train.white, y.train.white.grp)
+ns.white <- min(table(train.white.grp$y.train.white.grp))
+train.white.grp.ss <- train.white.grp %>% group_by(y.train.white.grp) %>% sample_n(ns.white)
+x.train.white.grp.ss <- as.data.frame(train.white.grp.ss[,1:11], ncol=11)
+y.train.white.grp.ss <- factor(train.white.grp.ss$y.train.white.grp)
+
+# train random forest
+fit.red.grp.ss <- train(x.train.red.grp.ss, y.train.red.grp.ss, method="rf", trControl=trCtl)
+fit.white.grp.ss <- train(x.train.white.grp.ss, y.train.white.grp.ss, method="rf", trControl=trCtl)
+
+# random forest training results
+fit.red.grp.ss$results
+fit.white.grp.ss$results
+
+# use training model to predict y
+y.pred.red.grp.ss <- predict(fit.red.grp.ss, x.test.red)
+y.pred.white.grp.ss <- predict(fit.white.grp.ss, x.test.white)
+
+# results of rf on test data
+cM.red.grp.ss = confusionMatrix(data=y.pred.red.grp.ss, reference=y.test.red.grp)
+cM.white.grp.ss = confusionMatrix(data=y.pred.white.grp.ss, reference=y.test.white.grp)
+
+# classification results (into quality score)
+cM.red.grp.ss$table
+class.red.grp.ss <- as.data.frame(cM.red.grp.ss$table)
+class.red.grp.ss$Freq[class.red.grp.ss$Freq == 0] <-NA
+
+cM.white.grp.ss$table
+class.white.grp.ss <- as.data.frame(cM.white.grp.ss$table)
+class.white.grp.ss$Freq[class.white.grp.ss$Freq == 0] <-NA
+
+# classification results as a plot
+cmPlot(class.red.grp.ss, "red", pred_first = TRUE,
+       "RF Classification of Grouped Quality for Red Wines \n Subsampled by Group")
+cmPlot(class.white.grp.ss, "white", pred_first = TRUE,
+       "RF Classification of Grouped Quality for White Wines \n Subsampled by Group")
+
+# prediction accuracy with 95% CI
+accuracy.red.grp.ss = cM.red.grp.ss$overall[c(1,3,4)]
+accuracy.red.grp.ss
+
+accuracy.white.grp.ss = cM.white.grp.ss$overall[c(1,3,4)]
+accuracy.white.grp.ss
+

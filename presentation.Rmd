@@ -1,0 +1,355 @@
+---
+title: "sommelieR"
+author: "Bryce Rowland, Seoyoon Cho, Taylor Lagler, Paloma Hauser, Mike Nodzenski"
+date: "4/10/2019"
+output: 
+  beamer_presentation:
+    color: "seahorse"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# create the datasets for training and testing for the group project
+set.seed(13)
+
+library(caret)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(data.table)
+library(gridExtra)
+library(Hmisc)
+library(corrplot)
+
+# red data
+red =  fread("winequality-red.csv",header=T)
+red$quality <- as.factor(red$quality)
+names(red) = gsub(" ", "_", names(red))
+
+# white data
+white =  fread("winequality-white.csv",header=T)
+white$quality <- as.factor(white$quality)
+names(white) = gsub(" ", "_", names(white))
+
+
+# create indices to subset the data using createDataPartition, reserve 20% of the data for testing.
+red_train_index <- createDataPartition(red$quality, p = .8,
+                                       list = F,
+                                       times = 1)
+white_train_index <- createDataPartition(white$quality, p = .8,
+                                         list = F,
+                                         times = 1)
+
+# create training and testing datasets
+red_train <- red[red_train_index,]
+red_test <- red[-red_train_index,]
+white_train <- white[white_train_index,]
+white_test <- white[-white_train_index,]
+
+# create merged data set
+# merge the red and white data sets, separately for testing and training data
+type <- c(rep("red", dim(red_train)[1]),rep("white", dim(white_train)[1]))
+all_train_a <- rbind(red_train, white_train)
+all_train <- cbind(all_train_a, type)
+
+type2 <- c(rep("red", dim(red_test)[1]),rep("white", dim(white_test)[1]))
+all_test_a <- rbind(red_test, white_test)
+all_test <- cbind(all_test_a, type2)
+
+# convert type and quality to factor
+all_train$type <- as.factor(all_train$type)
+all_train$quality <- as.factor(all_train$quality)
+
+all_test$type <- as.factor(all_test$type)
+all_test$quality <- as.factor(all_test$quality)
+
+x.train = as.data.frame(all_train[,1:11], ncol=11)
+y.train = factor(all_train$type)
+
+x.test = as.data.frame(all_test[,1:11], ncol=11)
+y.test = factor(all_test$type)
+
+# set up training and testing data
+x.train.red = as.data.frame(red_train[,1:11], ncol=11)
+y.train.red = factor(red_train$quality)
+
+x.test.red = as.data.frame(red_test[,1:11], ncol=11)
+y.test.red = factor(red_test$quality)
+
+x.train.white = as.data.frame(white_train[,1:11], ncol=11)
+y.train.white = factor(white_train$quality)
+
+x.test.white = as.data.frame(white_test[,1:11], ncol=11)
+y.test.white = factor(white_test$quality)
+
+# create training and testing data for groups--> low (3-4), mid (5-6) and high (7-9)
+y.train.red.grp <- y.train.red
+levels(y.train.red.grp)[1:2] <- "low"
+levels(y.train.red.grp)[2:3] <- "mid"
+levels(y.train.red.grp)[3:4] <- "high"
+
+y.test.red.grp <- y.test.red
+levels(y.test.red.grp)[1:2] <- "low"
+levels(y.test.red.grp)[2:3] <- "mid"
+levels(y.test.red.grp)[3:4] <- "high"
+
+y.train.white.grp <- y.train.white
+levels(y.train.white.grp)[1:2] <- "low"
+levels(y.train.white.grp)[2:3] <- "mid"
+levels(y.train.white.grp)[3:5] <- "high"
+
+y.test.white.grp <- y.test.white
+levels(y.test.white.grp)[1:2] <- "low"
+levels(y.test.white.grp)[2:3] <- "mid"
+levels(y.test.white.grp)[3:5] <- "high"
+```
+
+## Introduction
+* 2 datasets related to red and white Vinho Verde wines
+* each contain 11 physiochemical variables
+    + fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, density, pH, sulphates, alcohol
+* 6,493 observations
+* outcome variable: wine quality
+    + ordinal variable ranging from 0-10
+    + 0 is poor, 10 is excellent 
+    + classes are unbalanced
+
+## Project Aim
+Is it possible to predict wine quality using some subset of the physiochemical variables?
+
+## Looking At the Red Wine Data
+```{r red.boxplots, echo=FALSE, warning=FALSE}
+# red wine
+grid.arrange(
+  ggplot(red, aes(x = quality, y = fixed_acidity)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(red, aes(x = quality, y = volatile_acidity)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(red, aes(x = quality, y = citric_acid)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(red, aes(x = quality, y = residual_sugar)) +
+    geom_boxplot()+geom_jitter(alpha = .25), 
+  ggplot(red, aes(x = quality, y = chlorides)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(red, aes(x = quality, y = free_sulfur_dioxide)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(red, aes(x = quality, y = total_sulfur_dioxide)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(red, aes(x = quality, y = density)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+   ggplot(red, aes(x = quality, y = pH)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(red, aes(x = quality, y = sulphates)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(red, aes(x = quality, y = alcohol)) +
+    geom_boxplot()+geom_jitter(alpha = .25),ncol=4)
+```
+
+## Looking At the White Wine Data
+```{r white.boxplots, echo=FALSE, warning=FALSE}
+# white wine
+grid.arrange(
+  ggplot(white, aes(x = quality, y = fixed_acidity)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(white, aes(x = quality, y = volatile_acidity)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(white, aes(x = quality, y = citric_acid)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(white, aes(x = quality, y = residual_sugar)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(white, aes(x = quality, y = chlorides)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(white, aes(x = quality, y = free_sulfur_dioxide)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(white, aes(x = quality, y = total_sulfur_dioxide)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(white, aes(x = quality, y = density)) +
+    geom_boxplot()+geom_jitter(alpha = .25), 
+  ggplot(white, aes(x = quality, y = pH)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(white, aes(x = quality, y = sulphates)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(white, aes(x = quality, y = alcohol)) +
+    geom_boxplot()+geom_jitter(alpha = .25), ncol=4)
+```
+
+## Correlations- Red Wine
+```{r red.correlations, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+# correlations and p-values by variable pairs
+rcor_red <-rcorr(as.matrix(red[,1:11]))
+
+# plot of correlations
+corrplot(rcor_red$r, type="upper", order="hclust", tl.col = "black",
+         p.mat = rcor_red$P, sig.level = 0.01, insig = "blank")
+```
+
+## Correlations- White Wine
+```{r white.correlations, fig.align='center', echo=FALSE, warning=FALSE}
+# correlations and p-values by variable pairs
+rcor_white <-rcorr(as.matrix(white[,1:11]))
+
+# plot of correlations
+corrplot(rcor_white$r, type="upper", order="hclust", tl.col = "black",
+         p.mat = rcor_white$P, sig.level = 0.01, insig = "blank")
+```
+
+## Methods
+* linear model
+* partial proportional odds model
+* multinomial model
+* random forests
+
+## Variable Selection
+For variable selection, we examined the correlations between predictors and considered best subsets found in R. For the likelihood based models, we included the following predictors:
+
+  * red wine: volatile acidity, total sulfur dioxide, pH, alcohol, sulfates
+  * white wine: pH, density, volatile_acidity, residual_sugar, alcohol
+
+## Results: Linear Model
+
+## Results: Multinomial Model
+
+## Results: Random Forests (wine type classification)
+First, we merge the white and red wine datasets and use random forests to try to classify the wines into red or white
+
+```{r merged.svm, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+# train random forest
+trCtl <- trainControl(savePredictions=TRUE)
+fit <- train(x.train, y.train, method="rf", trControl=trCtl)
+
+# random forest training results
+# fit$results
+
+# use training model to predict y
+y.pred <- predict(fit, x.test)
+
+# results of rf on test data
+cM = confusionMatrix(data=y.pred, reference=y.test)
+
+# classification results (red vs white)
+# cM$table
+
+# classification results as a plot
+class.table <- as.data.frame(cM$table)
+class.table$Freq[class.table$Freq == 0] <-NA
+ggplot(class.table, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
+  scale_size(range=c(8,30)) + geom_label() + theme_minimal() +
+  scale_fill_continuous(low="red3", high="lightyellow") + guides(size=FALSE) +
+  ggtitle("RF Classification of Wine Type") + theme(plot.title = element_text(hjust=.5, size=20))
+```
+
+## Results: Random Forests (red wine quality classification)
+Next, we use random forests to classify each wine's wine quality score. We have 7 categories (scores 3-9) and we do this separately for the red and white wines.
+```{r red.svm, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+# train random forest
+trCtl <- trainControl(savePredictions=TRUE)
+fit.red <- train(x.train.red, y.train.red, method="rf", trControl=trCtl)
+fit.white <- train(x.train.white, y.train.white, method="rf", trControl=trCtl)
+
+# use training model to predict y
+y.pred.red <- predict(fit.red, x.test.red)
+y.pred.white <- predict(fit.white, x.test.white)
+
+# results of rf on test data
+cM.red = confusionMatrix(data=y.pred.red, reference=y.test.red)
+cM.white = confusionMatrix(data=y.pred.white, reference=y.test.white)
+
+# classification results (into quality score)
+class.red <- as.data.frame(cM.red$table)
+class.red$Freq[class.red$Freq == 0] <-NA
+
+class.white <- as.data.frame(cM.white$table)
+class.white$Freq[class.white$Freq == 0] <-NA
+
+# classification results as a plot
+ggplot(class.red, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
+  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
+  scale_fill_continuous(low="pink1", high="firebrick3") + guides(size=FALSE) +
+  ggtitle("RF Classification of Quality for Red Wines") + theme(plot.title = element_text(hjust=.5, size=20))
+```
+
+## Results: Random Forests (white wine quality classification)
+```{r white.svm, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(class.white, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
+  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
+  scale_fill_continuous(low="lightyellow", high="goldenrod1") + guides(size=FALSE) +
+  ggtitle("RF Classification of Quality for White Wines") + theme(plot.title = element_text(hjust=.5, size=20))
+```
+
+## Results: Random Forests (grouped red wine quality classification)
+We now group wine quality into three categories: low (scores 3-4), medium (5-6), high (7-9), and try to classify the wines into these three categories.
+```{r red.svm.grouped, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+# train random forest
+fit.red.grp <- train(x.train.red, y.train.red.grp, method="rf", trControl=trCtl)
+fit.white.grp <- train(x.train.white, y.train.white.grp, method="rf", trControl=trCtl)
+
+# use training model to predict y
+y.pred.red.grp <- predict(fit.red.grp, x.test.red)
+y.pred.white.grp <- predict(fit.white.grp, x.test.white)
+
+# results of rf on test data
+cM.red.grp = confusionMatrix(data=y.pred.red.grp, reference=y.test.red.grp)
+cM.white.grp = confusionMatrix(data=y.pred.white.grp, reference=y.test.white.grp)
+
+# classification results (into quality score)
+# cM.red.grp$table
+class.red.grp <- as.data.frame(cM.red.grp$table)
+class.red.grp$Freq[class.red.grp$Freq == 0] <-NA
+
+# cM.white.grp$table
+class.white.grp <- as.data.frame(cM.white.grp$table)
+class.white.grp$Freq[class.white.grp$Freq == 0] <-NA
+
+# classification results as a plot
+ggplot(class.red.grp, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
+  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
+  scale_fill_continuous(low="pink1", high="firebrick3") + guides(size=FALSE) +
+  ggtitle("RF Classification of Quality for Red Wines") + theme(plot.title = element_text(hjust=.5, size=20))
+```
+## Results: Random Forests (grouped white wine quality classification)
+```{r white.svm.grouped,echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(class.white.grp, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
+  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
+  scale_fill_continuous(low="lightyellow", high="goldenrod1") + guides(size=FALSE) +
+  ggtitle("RF Classification of Quality for White Wines") + theme(plot.title = element_text(hjust=.5, size=20))
+```
+
+## Results: Accuracy
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# SVM all categories
+  # true classification
+  table(red_test$quality)
+  table(white_test$quality)
+  
+  # prediction accuracy with 95% CI
+  accuracy.red = cM.red$overall[c(1,3,4)]
+  accuracy.red
+
+  accuracy.white = cM.white$overall[c(1,3,4)]
+  accuracy.white
+
+# SVM grouped categories
+  # true classification
+  table(y.test.red.grp)
+  table(y.test.white.grp)
+  
+  # prediction accuracy with 95% CI
+  accuracy.red.grp = cM.red.grp$overall[c(1,3,4)]
+  accuracy.red.grp
+  
+  accuracy.white.grp = cM.white.grp$overall[c(1,3,4)]
+  accuracy.white.grp
+
+# SVM merged data 
+  # prediction accuracy with 95% CI
+  accuracy_merged = cM$overall[c(1,3,4)]
+  accuracy_merged
+```
+
+## Discussion   
+(about interpretation or possible future directions) 
+
+
+
+
