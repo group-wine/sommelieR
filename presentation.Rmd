@@ -1,10 +1,21 @@
 ---
 title: "sommelieR"
-author: "Bryce Rowland, Seoyoon Cho, Taylor Lagler, Paloma Hauser, Mike Nodzenski"
+author: "Seoyoon Cho, Paloma Hauser, Taylor Lagler, Mike Nodzenski, Bryce Rowland"
 date: "4/10/2019"
 output: 
   beamer_presentation:
     color: "seahorse"
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{longtable}
+- \usepackage{array}
+- \usepackage{multirow}
+- \usepackage{wrapfig}
+- \usepackage{float}
+- \usepackage{colortbl}
+- \usepackage{pdflscape}
+- \usepackage{tabu}
+- \usepackage{threeparttable}
 ---
 
 ```{r setup, include=FALSE}
@@ -21,48 +32,26 @@ library(data.table)
 library(gridExtra)
 library(Hmisc)
 library(corrplot)
+library(tidyverse)
+library(kableExtra)
+library(knitr)
 
-# red data
-red =  fread("winequality-red.csv",header=T)
-red$quality <- as.factor(red$quality)
-names(red) = gsub(" ", "_", names(red))
+# Data splitting and merging scripts can be found in Data folder
 
-# white data
-white =  fread("winequality-white.csv",header=T)
-white$quality <- as.factor(white$quality)
-names(white) = gsub(" ", "_", names(white))
+#--------------------------------------------------------------------#
+# Data set up for boxplot code:
+red_all =  fread("./data/winequality-red.csv",header=T)
+red_all$quality <- as.factor(red_all$quality)
+names(red_all) = gsub(" ", "_", names(red_all))
 
+white_all =  fread("./data/winequality-white.csv",header=T)
+white_all$quality <- as.factor(white_all$quality)
+names(white_all) = gsub(" ", "_", names(white_all))
 
-# create indices to subset the data using createDataPartition, reserve 20% of the data for testing.
-red_train_index <- createDataPartition(red$quality, p = .8,
-                                       list = F,
-                                       times = 1)
-white_train_index <- createDataPartition(white$quality, p = .8,
-                                         list = F,
-                                         times = 1)
-
-# create training and testing datasets
-red_train <- red[red_train_index,]
-red_test <- red[-red_train_index,]
-white_train <- white[white_train_index,]
-white_test <- white[-white_train_index,]
-
-# create merged data set
-# merge the red and white data sets, separately for testing and training data
-type <- c(rep("red", dim(red_train)[1]),rep("white", dim(white_train)[1]))
-all_train_a <- rbind(red_train, white_train)
-all_train <- cbind(all_train_a, type)
-
-type2 <- c(rep("red", dim(red_test)[1]),rep("white", dim(white_test)[1]))
-all_test_a <- rbind(red_test, white_test)
-all_test <- cbind(all_test_a, type2)
-
-# convert type and quality to factor
-all_train$type <- as.factor(all_train$type)
-all_train$quality <- as.factor(all_train$quality)
-
-all_test$type <- as.factor(all_test$type)
-all_test$quality <- as.factor(all_test$quality)
+#--------------------------------------------------------------------#
+# Data set up for RF classification by type code:
+all_train = fread("./data/training_data/all_train.csv",header=T)
+all_test = fread("./data/testing_data/all_test.csv",header=T)
 
 x.train = as.data.frame(all_train[,1:11], ncol=11)
 y.train = factor(all_train$type)
@@ -70,7 +59,16 @@ y.train = factor(all_train$type)
 x.test = as.data.frame(all_test[,1:11], ncol=11)
 y.test = factor(all_test$type)
 
-# set up training and testing data
+#--------------------------------------------------------------------#
+# Data set up for RF classification by quality code:
+source("./R/cmPlot_function.R") # required to plot CMs
+
+red_train = fread("./data/training_data/red_train.csv",header=T)
+red_test = fread("./data/testing_data/red_test.csv",header=T)
+
+white_train = fread("./data/training_data/white_train.csv",header=T)
+white_test = fread("./data/testing_data/white_test.csv",header=T)
+
 x.train.red = as.data.frame(red_train[,1:11], ncol=11)
 y.train.red = factor(red_train$quality)
 
@@ -83,7 +81,7 @@ y.train.white = factor(white_train$quality)
 x.test.white = as.data.frame(white_test[,1:11], ncol=11)
 y.test.white = factor(white_test$quality)
 
-# create training and testing data for groups--> low (3-4), mid (5-6) and high (7-9)
+# group into low (3-4), mid (5-6) and high (7-9)
 y.train.red.grp <- y.train.red
 levels(y.train.red.grp)[1:2] <- "low"
 levels(y.train.red.grp)[2:3] <- "mid"
@@ -103,6 +101,10 @@ y.test.white.grp <- y.test.white
 levels(y.test.white.grp)[1:2] <- "low"
 levels(y.test.white.grp)[2:3] <- "mid"
 levels(y.test.white.grp)[3:5] <- "high"
+
+#--------------------------------------------------------------------#
+
+
 ```
 
 ## Introduction
@@ -122,62 +124,64 @@ Is it possible to predict wine quality using some subset of the physiochemical v
 ```{r red.boxplots, echo=FALSE, warning=FALSE}
 # red wine
 grid.arrange(
-  ggplot(red, aes(x = quality, y = fixed_acidity)) +
+  ggplot(red_all, aes(x = quality, y = fixed_acidity)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(red, aes(x = quality, y = volatile_acidity)) +
+  ggplot(red_all, aes(x = quality, y = volatile_acidity)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(red, aes(x = quality, y = citric_acid)) +
+  ggplot(red_all, aes(x = quality, y = citric_acid)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(red, aes(x = quality, y = residual_sugar)) +
-    geom_boxplot()+geom_jitter(alpha = .25), 
-  ggplot(red, aes(x = quality, y = chlorides)) +
+  ggplot(red_all, aes(x = quality, y = residual_sugar)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(red, aes(x = quality, y = free_sulfur_dioxide)) +
+  ggplot(red_all, aes(x = quality, y = chlorides)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(red, aes(x = quality, y = total_sulfur_dioxide)) +
+  ggplot(red_all, aes(x = quality, y = free_sulfur_dioxide)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(red, aes(x = quality, y = density)) +
+  ggplot(red_all, aes(x = quality, y = total_sulfur_dioxide)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-   ggplot(red, aes(x = quality, y = pH)) +
+  ggplot(red_all, aes(x = quality, y = density)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(red, aes(x = quality, y = sulphates)) +
+  ggplot(red_all, aes(x = quality, y = pH)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(red, aes(x = quality, y = alcohol)) +
-    geom_boxplot()+geom_jitter(alpha = .25),ncol=4)
+  ggplot(red_all, aes(x = quality, y = sulphates)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(red_all, aes(x = quality, y = alcohol)) +
+    geom_boxplot()+geom_jitter(alpha = .25), ncol=4
+)
 ```
 
 ## Looking At the White Wine Data
 ```{r white.boxplots, echo=FALSE, warning=FALSE}
 # white wine
 grid.arrange(
-  ggplot(white, aes(x = quality, y = fixed_acidity)) +
+  ggplot(white_all, aes(x = quality, y = fixed_acidity)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(white, aes(x = quality, y = volatile_acidity)) +
+  ggplot(white_all, aes(x = quality, y = volatile_acidity)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(white, aes(x = quality, y = citric_acid)) +
+  ggplot(white_all, aes(x = quality, y = citric_acid)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(white, aes(x = quality, y = residual_sugar)) +
+  ggplot(white_all, aes(x = quality, y = residual_sugar)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(white, aes(x = quality, y = chlorides)) +
+  ggplot(white_all, aes(x = quality, y = chlorides)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(white, aes(x = quality, y = free_sulfur_dioxide)) +
+  ggplot(white_all, aes(x = quality, y = free_sulfur_dioxide)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(white, aes(x = quality, y = total_sulfur_dioxide)) +
+  ggplot(white_all, aes(x = quality, y = total_sulfur_dioxide)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(white, aes(x = quality, y = density)) +
-    geom_boxplot()+geom_jitter(alpha = .25), 
-  ggplot(white, aes(x = quality, y = pH)) +
+  ggplot(white_all, aes(x = quality, y = density)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(white, aes(x = quality, y = sulphates)) +
+  ggplot(white_all, aes(x = quality, y = pH)) +
     geom_boxplot()+geom_jitter(alpha = .25),
-  ggplot(white, aes(x = quality, y = alcohol)) +
-    geom_boxplot()+geom_jitter(alpha = .25), ncol=4)
+  ggplot(white_all, aes(x = quality, y = sulphates)) +
+    geom_boxplot()+geom_jitter(alpha = .25),
+  ggplot(white_all, aes(x = quality, y = alcohol)) +
+    geom_boxplot()+geom_jitter(alpha = .25), ncol=4
+)
 ```
 
 ## Correlations- Red Wine
-```{r red.correlations, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+```{r red.correlations, echo=FALSE, fig.align='center', message=FALSE, warning=FALSE}
 # correlations and p-values by variable pairs
-rcor_red <-rcorr(as.matrix(red[,1:11]))
+rcor_red <-rcorr(as.matrix(red_all[,1:11]))
 
 # plot of correlations
 corrplot(rcor_red$r, type="upper", order="hclust", tl.col = "black",
@@ -185,9 +189,9 @@ corrplot(rcor_red$r, type="upper", order="hclust", tl.col = "black",
 ```
 
 ## Correlations- White Wine
-```{r white.correlations, fig.align='center', echo=FALSE, warning=FALSE}
+```{r white.correlations, echo=FALSE, fig.align='center', message=FALSE, warning=FALSE}
 # correlations and p-values by variable pairs
-rcor_white <-rcorr(as.matrix(white[,1:11]))
+rcor_white <-rcorr(as.matrix(white_all[,1:11]))
 
 # plot of correlations
 corrplot(rcor_white$r, type="upper", order="hclust", tl.col = "black",
@@ -202,9 +206,9 @@ corrplot(rcor_white$r, type="upper", order="hclust", tl.col = "black",
 
 ## Variable Selection
 For variable selection, we examined the correlations between predictors and considered best subsets found in R. For the likelihood based models, we included the following predictors:
-
+  
   * red wine: volatile acidity, total sulfur dioxide, pH, alcohol, sulfates
-  * white wine: pH, density, volatile_acidity, residual_sugar, alcohol
+* white wine: pH, density, volatile_acidity, residual_sugar, alcohol
 
 ## Results: Linear Model
 
@@ -213,13 +217,13 @@ For variable selection, we examined the correlations between predictors and cons
 ## Results: Random Forests (wine type classification)
 First, we merge the white and red wine datasets and use random forests to try to classify the wines into red or white
 
-```{r merged.svm, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+```{r merged.rf, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
 # train random forest
 trCtl <- trainControl(savePredictions=TRUE)
 fit <- train(x.train, y.train, method="rf", trControl=trCtl)
 
 # random forest training results
-# fit$results
+#fit$results
 
 # use training model to predict y
 y.pred <- predict(fit, x.test)
@@ -228,24 +232,44 @@ y.pred <- predict(fit, x.test)
 cM = confusionMatrix(data=y.pred, reference=y.test)
 
 # classification results (red vs white)
-# cM$table
+#cM$table
+pred <- round(cM$overall[1:2], 4) # prediction accuracy and kappa
+res <- round(diag(cM$table)/table(y.test), 4)*100 # percent correct into each type
 
+results.type <- setNames(data.frame(matrix(ncol = 4, nrow = 1)),
+                            c("Prediction Accuracy", "Kappa", "Red", "White"))
+results.type[1,] <- c(pred,res)
+rownames(results.type) = c("Random Forest")
+
+kable(results.type, caption = "Classification Results for Wine Type", booktabs=T) %>%
+  add_header_above(c(" ", "Overall Results" = 2, "Percent Correct by Category" = 2)) %>%
+  kable_styling(latex_options = c("repeat_header", "scale_down"))
+```
+
+## Results: Random Forests (wine type classification)
+```{r merged.rfplot, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
 # classification results as a plot
 class.table <- as.data.frame(cM$table)
 class.table$Freq[class.table$Freq == 0] <-NA
 ggplot(class.table, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
-  scale_size(range=c(8,30)) + geom_label() + theme_minimal() +
+  scale_size(range=c(8,30)) + geom_label(na.rm=T) + theme_minimal() +
   scale_fill_continuous(low="red3", high="lightyellow") + guides(size=FALSE) +
   ggtitle("RF Classification of Wine Type") + theme(plot.title = element_text(hjust=.5, size=20))
 ```
 
+
 ## Results: Random Forests (red wine quality classification)
 Next, we use random forests to classify each wine's wine quality score. We have 7 categories (scores 3-9) and we do this separately for the red and white wines.
-```{r red.svm, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+```{r red.rf, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+source("./R/cmPlot_function.R") # required to plot CMs
 # train random forest
 trCtl <- trainControl(savePredictions=TRUE)
 fit.red <- train(x.train.red, y.train.red, method="rf", trControl=trCtl)
 fit.white <- train(x.train.white, y.train.white, method="rf", trControl=trCtl)
+
+# random forest training results
+#fit.red$results
+#fit.white$results
 
 # use training model to predict y
 y.pred.red <- predict(fit.red, x.test.red)
@@ -256,33 +280,45 @@ cM.red = confusionMatrix(data=y.pred.red, reference=y.test.red)
 cM.white = confusionMatrix(data=y.pred.white, reference=y.test.white)
 
 # classification results (into quality score)
+#cM.red$table
 class.red <- as.data.frame(cM.red$table)
 class.red$Freq[class.red$Freq == 0] <-NA
 
+#cM.white$table
 class.white <- as.data.frame(cM.white$table)
 class.white$Freq[class.white$Freq == 0] <-NA
 
 # classification results as a plot
-ggplot(class.red, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
-  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
-  scale_fill_continuous(low="pink1", high="firebrick3") + guides(size=FALSE) +
-  ggtitle("RF Classification of Quality for Red Wines") + theme(plot.title = element_text(hjust=.5, size=20))
+cmPlot(class.red, "red", pred_first = TRUE,
+"RF Classification of Quality for Red Wines")
+#cmPlot(class.white, "white", pred_first = TRUE,
+#       "RF Classification of Quality for White Wines")
+
+# prediction accuracy by category
+pred.red <- round(diag(cM.red$table)/table(y.test.red), 4)*100
+pred.white <- round(diag(cM.white$table)/table(y.test.white), 4)*100
+
+# prediction accuracy and kappa
+res.red = round(cM.red$overall[1:2], 4)
+res.white = round(cM.white$overall[1:2], 4) 
 ```
 
 ## Results: Random Forests (white wine quality classification)
-```{r white.svm, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(class.white, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
-  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
-  scale_fill_continuous(low="lightyellow", high="goldenrod1") + guides(size=FALSE) +
-  ggtitle("RF Classification of Quality for White Wines") + theme(plot.title = element_text(hjust=.5, size=20))
+```{r white.rf, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+cmPlot(class.white, "white", pred_first = TRUE,
+"RF Classification of Quality for White Wines")
 ```
 
 ## Results: Random Forests (grouped red wine quality classification)
 We now group wine quality into three categories: low (scores 3-4), medium (5-6), high (7-9), and try to classify the wines into these three categories.
-```{r red.svm.grouped, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
+```{r red.rf.grouped, fig.align='center', echo=FALSE, message=FALSE, warning=FALSE}
 # train random forest
 fit.red.grp <- train(x.train.red, y.train.red.grp, method="rf", trControl=trCtl)
 fit.white.grp <- train(x.train.white, y.train.white.grp, method="rf", trControl=trCtl)
+
+# random forest training results
+#fit.red.grp$results
+#fit.white.grp$results
 
 # use training model to predict y
 y.pred.red.grp <- predict(fit.red.grp, x.test.red)
@@ -293,58 +329,182 @@ cM.red.grp = confusionMatrix(data=y.pred.red.grp, reference=y.test.red.grp)
 cM.white.grp = confusionMatrix(data=y.pred.white.grp, reference=y.test.white.grp)
 
 # classification results (into quality score)
-# cM.red.grp$table
+#cM.red.grp$table
 class.red.grp <- as.data.frame(cM.red.grp$table)
 class.red.grp$Freq[class.red.grp$Freq == 0] <-NA
 
-# cM.white.grp$table
+#cM.white.grp$table
 class.white.grp <- as.data.frame(cM.white.grp$table)
 class.white.grp$Freq[class.white.grp$Freq == 0] <-NA
 
 # classification results as a plot
-ggplot(class.red.grp, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
-  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
-  scale_fill_continuous(low="pink1", high="firebrick3") + guides(size=FALSE) +
-  ggtitle("RF Classification of Quality for Red Wines") + theme(plot.title = element_text(hjust=.5, size=20))
+cmPlot(class.red.grp, "red", pred_first = TRUE,
+"RF Classification of Grouped Quality for Red Wines")
+#cmPlot(class.white.grp, "white", pred_first = TRUE,
+#       "RF Classification of Grouped Quality for White Wines")
+
+# prediction accuracy by category
+pred.red.grp <- round(diag(cM.red.grp$table)/table(y.test.red.grp), 4)*100
+pred.white.grp <- round(diag(cM.white.grp$table)/table(y.test.white.grp), 4)*100
+
+# prediction accuracy and kappa
+res.red.grp = round(cM.red.grp$overall[1:2], 4)
+res.white.grp = round(cM.white.grp$overall[1:2], 4)
 ```
 ## Results: Random Forests (grouped white wine quality classification)
-```{r white.svm.grouped,echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(class.white.grp, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
-  scale_size(range=c(2,20)) + geom_label() + theme_minimal() +
-  scale_fill_continuous(low="lightyellow", high="goldenrod1") + guides(size=FALSE) +
-  ggtitle("RF Classification of Quality for White Wines") + theme(plot.title = element_text(hjust=.5, size=20))
+```{r white.rf.grouped,echo=FALSE, message=FALSE, warning=FALSE}
+cmPlot(class.white.grp, "white", pred_first = TRUE,
+"RF Classification of Grouped Quality for White Wines")
 ```
 
-## Results: Accuracy
+## Results: Random Forests with Subsampling (grouped red wine quality classification)
+We now perform the same grouped classification, but with subsampling to balance the groups.
+
+```{r red.rf.grouped.ss,echo=FALSE, message=FALSE, warning=FALSE}
+# subsmaple training data based on minimum within group count
+train.red.grp <- cbind(x.train.red, y.train.red.grp)
+ns.red <- min(table(train.red.grp$y.train.red.grp))
+train.red.grp.ss <- train.red.grp %>% group_by(y.train.red.grp) %>% sample_n(ns.red)
+x.train.red.grp.ss <- as.data.frame(train.red.grp.ss[,1:11], ncol=11)
+y.train.red.grp.ss <- factor(train.red.grp.ss$y.train.red.grp)
+
+train.white.grp <- cbind(x.train.white, y.train.white.grp)
+ns.white <- min(table(train.white.grp$y.train.white.grp))
+train.white.grp.ss <- train.white.grp %>% group_by(y.train.white.grp) %>% sample_n(ns.white)
+x.train.white.grp.ss <- as.data.frame(train.white.grp.ss[,1:11], ncol=11)
+y.train.white.grp.ss <- factor(train.white.grp.ss$y.train.white.grp)
+
+# train random forest
+fit.red.grp.ss <- train(x.train.red.grp.ss, y.train.red.grp.ss, method="rf", trControl=trCtl)
+fit.white.grp.ss <- train(x.train.white.grp.ss, y.train.white.grp.ss, method="rf", trControl=trCtl)
+
+# random forest training results
+#fit.red.grp.ss$results
+#fit.white.grp.ss$results
+
+# use training model to predict y
+y.pred.red.grp.ss <- predict(fit.red.grp.ss, x.test.red)
+y.pred.white.grp.ss <- predict(fit.white.grp.ss, x.test.white)
+
+# results of rf on test data
+cM.red.grp.ss <- confusionMatrix(data=y.pred.red.grp.ss, reference=y.test.red.grp)
+cM.white.grp.ss <- confusionMatrix(data=y.pred.white.grp.ss, reference=y.test.white.grp)
+
+# classification results (into quality score)
+#cM.red.grp.ss$table
+class.red.grp.ss <- as.data.frame(cM.red.grp.ss$table)
+class.red.grp.ss$Freq[class.red.grp.ss$Freq == 0] <-NA
+
+#cM.white.grp.ss$table
+class.white.grp.ss <- as.data.frame(cM.white.grp.ss$table)
+class.white.grp.ss$Freq[class.white.grp.ss$Freq == 0] <-NA
+
+# classification results as a plot
+cmPlot(class.red.grp.ss, "red", pred_first = TRUE,
+"RF Classification of Grouped Quality for Red Wines \n Subsampled by Group")
+# cmPlot(class.white.grp.ss, "white", pred_first = TRUE,
+#        "RF Classification of Grouped Quality for White Wines \n Subsampled by Group")
+
+# prediction accuracy by category
+pred.red.grp.ss <- round(diag(cM.red.grp.ss$table)/table(y.test.red.grp), 4)*100
+pred.white.grp.ss <- round(diag(cM.white.grp.ss$table)/table(y.test.white.grp), 4)*100
+
+# prediction accuracy and kappa
+res.red.grp.ss <- round(cM.red.grp.ss$overall[1:2],4)
+res.white.grp.ss <- round(cM.white.grp.ss$overall[1:2],4)
+
+```
+
+## Results: Random Forests with Subsampling (grouped red wine quality classification)
+
+```{r white.rf.grouped.ss,echo=FALSE, message=FALSE, warning=FALSE}
+cmPlot(class.white.grp.ss, "white", pred_first = TRUE,
+"RF Classification of Grouped Quality for White Wines \n Subsampled by Group")
+```
+
+## Comparison of Results: Red Wine, Ungrouped
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-# SVM all categories
-  # true classification
-  table(red_test$quality)
-  table(white_test$quality)
-  
-  # prediction accuracy with 95% CI
-  accuracy.red = cM.red$overall[c(1,3,4)]
-  accuracy.red
+#-----------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
+# Create Results Data Tables
+# round results to 4 digits
+# accuracy into categories as percent
+# rename row and fill in data accordingly (add more rows if needed)
+library(knitr)
+library(kableExtra)
+#-----------------------------------------------------------------------------#
+# RED WINE NO GROUPING
+results.red <- setNames(data.frame(matrix(ncol = 8, nrow = 4)),
+c("Prediction Accuracy", "Kappa", "3", "4", "5", "6", "7", "8"))
+rownames(results.red) <- c("Random Forest", "Method 2", "Method 3", "Method 4")
 
-  accuracy.white = cM.white$overall[c(1,3,4)]
-  accuracy.white
+results.red[1,] <- c(res.red, pred.red)
 
-# SVM grouped categories
-  # true classification
-  table(y.test.red.grp)
-  table(y.test.white.grp)
-  
-  # prediction accuracy with 95% CI
-  accuracy.red.grp = cM.red.grp$overall[c(1,3,4)]
-  accuracy.red.grp
-  
-  accuracy.white.grp = cM.white.grp$overall[c(1,3,4)]
-  accuracy.white.grp
 
-# SVM merged data 
-  # prediction accuracy with 95% CI
-  accuracy_merged = cM$overall[c(1,3,4)]
-  accuracy_merged
+#-----------------------------------------------------------------------------#
+# WHITE WINE NO GROUPING
+results.white <- setNames(data.frame(matrix(ncol = 9, nrow = 4)),
+c("Prediction Accuracy", "Kappa", "3", "4", "5", "6", "7", "8", "9"))
+rownames(results.white) <- c("Random Forest", "Method 2", "Method 3", "Method 4")
+
+results.white[1,] <- c(res.white, pred.white)
+
+
+#-----------------------------------------------------------------------------#
+# RED WINE WITH GROUPING
+results.red.grp <- setNames(data.frame(matrix(ncol = 5, nrow = 5)),
+c("Prediction Accuracy", "Kappa", "Low", "Mid", "High"))
+rownames(results.red.grp) <- c("Random Forest", "RF Subsampled",
+"Method 3", "Method 4", "Method 5")
+
+results.red.grp[1,] <- c(res.red.grp, pred.red.grp)
+results.red.grp[2,] <- c(res.red.grp.ss, pred.red.grp.ss)
+
+
+#-----------------------------------------------------------------------------#
+# WHITE WINE WITH GROUPING
+results.white.grp <- setNames(data.frame(matrix(ncol = 5, nrow = 5)),
+c("Prediction Accuracy", "Kappa", "Low", "Mid", "High"))
+rownames(results.white.grp) <- c("Random Forest", "RF Subsampled",
+"Method 3", "Method 4", "Method 5")
+
+results.white.grp[1,] <- c(res.white.grp, pred.white.grp)
+results.white.grp[2,] <- c(res.white.grp.ss, pred.white.grp.ss)
+
+#-----------------------------------------------------------------------------#
+# Print out comparison tables created above
+# Red wine no groups
+kable(results.red, caption = "Comparison of Results for Red Wine", booktabs=T) %>%
+add_header_above(c(" ", "Overall Results" = 2, "Percent Correct by Category" = 6)) %>%
+kable_styling(latex_options = c("repeat_header", "scale_down"))
+
+#-----------------------------------------------------------------------------#
+```
+
+## Comparison of Results: White Wine, Ungrouped
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Print out comparison tables created above
+
+# White wine no groups
+kable(results.white, caption = "Comparison of Results for White Wine", booktabs=T) %>%
+add_header_above(c(" ", "Overall Results" = 2, "Percent Correct by Category" = 7)) %>%
+kable_styling(latex_options = c("repeat_header", "scale_down"))
+```
+
+## Comparison of Results: Red Wine, Grouped
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Red wine grouped
+kable(results.red.grp, caption = "Comparison of Results for Red Wine with Grouped Quality", booktabs=T) %>%
+add_header_above(c(" ", "Overall Results" = 2, "Percent Correct by Category" = 3)) %>%
+kable_styling(latex_options = c("repeat_header", "scale_down"))
+```
+
+## Comparison of Results: White Wine, Grouped
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# White wine grouped
+kable(results.white.grp, caption = "Comparison of Results for White Wine with Grouped Quality", booktabs=T) %>%
+add_header_above(c(" ", "Overall Results" = 2, "Percent Correct by Category" = 3)) %>%
+kable_styling(latex_options = c("repeat_header", "scale_down"))
 ```
 
 ## Discussion   
