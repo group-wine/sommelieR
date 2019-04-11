@@ -9,177 +9,68 @@ library(nnet)
 library(tidyverse)
 ```
 
+BOBYQA
+
 ```{r}
 red <- read_csv("../data/training_data/red_train.csv")
 ```
 
 ```{r}
-red_f <- red %>% mutate(quality_f = factor(quality,levels = c("8", "3", "4","5", "6", "7")))
-
-sat <- multinom(quality_f ~ 1 + alcohol, data = red_f, trace = 1, maxit = 300)
-coef_sat <- t(coef(sat)) %>% matrix(nrow = 1)
-
+complete_red <- red %>% drop_na() %>% 
+  mutate(quality_f = as.factor(quality))
 ```
 
+
 ```{r}
-y = red_f %>% select(quality) %>% 
-  slice(c(1:50))
-
-data_to_mulitnomial <- function(data, formula, intercept = T){
-  vars <- all.vars(formula)
-  response_variable_name <- vars[1]
-  independent_variable_names <- vars[-1]
-  
-  ###Set up y
-  #Get the dependent variable
-  y <- data %>% select(response_variable_name) %>% as.matrix() 
-  #Determine the column in the matrix to which each value of y corresponds
-  positions_y <- rank(unique(y))
-  unique_y <- unique(y)
-  ncols <- y %>% unique() %>% length()
-  nrows <- y %>% length()
-  
-  #Set up empty y matrix
-  multi_y <- matrix(rep(0, ncols*nrows), nrow = nrows, ncol = ncols)
-  for(i in 1:nrows){
-    #Set the j value to be the position associated with the given y_i
-    j <- positions_y[which(unique_y == y[i])]
-    multi_y[i,j] <- 1
-  }
-  
-  ###Set up X
-  X <- model.matrix(formula, data = data)
-  
-  return(list(multi_y, X))
-}
-
-
+source("../R/multinomial_likelihood.R")
 ```
 
+
 ```{r}
-l <- data_to_mulitnomial(red_f, formula(quality ~ alcohol))
+source("../R/multinomial_likelihood.R")
+set.seed(13)
+l <- data_to_mulitnomial(complete_red, formula(quality ~ alcohol + `volatile acidity` + `total sulfur dioxide` + pH + sulphates), ref_level = "8")
 y <- l[[1]]
 X <- l[[2]]
-beta <- matrix(rnorm(rnorm(2*ncol(X))), byrow = T, nrow = 2, ncol = ncol(y))
-```
-
-```{r}
-multinomial_log_likelihood <- function(y, X, b_vector){
-  #This function expects:
-
-  #y should be an (n x (k-1)) matrix for the dependent variable as created by the
-  #data_to_multinomial function, where k is the number of categories for y.
-  
-  #X should be an (n x p) matrix, where p is the number of predictors
-
-  #b_vector should be a (p*(k-1) x 1) vector because the optim function expects the 
-  #parameters on which we optimize to be in a vector. However, the function converts
-  #this vector to a (p x (k-1)) vector initially for ease of programming.
-  beta <- matrix(b_vector, ncol = ncol(y))
-  if(nrow(y)  != nrow(X)){
-    stop("Make sure that X and y have the same number of rows")
-  }
-  
-  if(ncol(y) != ncol(beta)){
-    stop("Make sure y and beta have the same number of columns")
-  }
-  
-  if(ncol(X) != nrow(beta)){
-    stop("Make sure that X and beta have conformable columns and rows")
-  }
-  
-  N <- nrow(y)
-  l <- c(rep(0, N))
-
-  for(i in 1:N){
-    t1 <- (X[i,] %*% beta)[which(y[2,] == 1)]
-    t2 <- log(1 + sum(exp(X[i,] %*% beta)))
-    l[i] <- (X[i,] %*% beta)[which(y[2,] == 1)] - log(1 + sum(exp(X[i,] %*% beta)))
-  }
-  l_n <- sum(l)
-  return(l_n)
-}
-
-multinomial_log_likelihood(y, X, beta)
-```
-```{r}
-mll_gradient <- function(y, X, b_vector){
-  
-  #This function expects:
-
-  #y should be an (n x (k-1)) matrix for the dependent variable as created by the
-  #data_to_multinomial function, where k is the number of categories for y.
-
-  #X should be an (n x p) matrix, where p is the number of predictors
-
-  #b_vector should be a (p*(k-1) x 1) vector because the optim function expects the 
-  #parameters on which we optimize to be in a vector. However, the function converts
-  #this vector to a (p x (k-1)) vector initially for ease of programming.
-  
-  beta <- matrix(b_vector, ncol = ncol(y))
-  if(nrow(y)  != nrow(X)){
-    stop("Make sure that X and y have the same number of rows")
-  }
-  
-  if(ncol(y) != ncol(beta)){
-    stop("Make sure y and beta have the same number of columns")
-  }
-  
-  if(ncol(X) != nrow(beta)){
-    stop("Make sure that X and beta have conformable columns and rows")
-  }
-  
-  #Will return a (p*(k -1) x 1) vector.
-
- n <- nrow(y)
- p <- nrow(beta)
- k_minus_one <- ncol(beta) 
- g <- matrix(rep(0, p*k_minus_one), ncol = k_minus_one)
- print(c(p, k_minus_one))
-  #Itterate down the row in each column of the beta matrix. Each row corresponds to 
-   #the parameter associated with each covariate in the model. 
- for(i in 1:p){
-    #For each column in the new beta matrix corresponding to each level of the dependent
- #variable.
-   for(j in 1:k_minus_one){
-     element <- rep(0, n)
-     #Iterate over all subjects since they all contribute to each value of the gradient.
-     for (k in 1:n){
-       element[k] <- y[k,j]*X[k,][i] + (exp(X[k,] %*% beta[,j])*X[k,][i])/(1 + sum(exp(X[j,] %*% beta)))
-     }
-     g[i,j] <- sum(element)
-   }
- }
- #Convert gradient back to (p*(k - 1) x 1) vector and return it.
- return(matrix(g, ncol = 1))
-}
-
-
+b_vector <- matrix(rnorm(runif(ncol(y)*ncol(X),-2,2)), byrow = T, nrow = ncol(X)*ncol(y), ncol = 1)
+multinomial_log_likelihood(y,X,b_vector)
 ```
 
 ```{r}
 library(optimx)
 
-optimx(
-  par = c(coef_sat),
+fit <- optimx(
+  par = c(b_vector),
   fn = function(x, y, X){multinomial_log_likelihood(y = y,
-                                                    X = X, 
+                                                    X = X,
                                                     b_vector = x)},
   # gr = function(x, y, X){mll_gradient(y = y,
-  #                                     X = X, 
+  #                                     X = X,
   #                                     b_vector = x)},
-  y = y, 
+  y = y,
   X = X,
   method =  "BFGS",
+  hessian = F,
   control = list(
     trace = 1,
-    abstol = 10e-5,
+    abstol = 10e-7,
     maximize = T
   )
 )
 ```
 
 ```{r}
+library(VGAM)
+
+x <- coef(vglm(quality ~ 1 + alcohol + `volatile acidity` + `total sulfur dioxide` + pH + sulphates, data = complete_red,family= multinomial(refLevel = "8"))) %>% 
+  matrix(ncol = ncol(X)) %>% 
+  t() %>% 
+  matrix(ncol = 1)
+
+abs(x - fit[1:30]) %>% 
+  as.matrix() %>% mean()
 
 ```
+
+
 
