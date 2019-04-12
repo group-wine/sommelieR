@@ -5,7 +5,7 @@ output: html_notebook
 
 
 ```{r}
-library(nnet)
+library(VGAM)
 library(tidyverse)
 ```
 
@@ -60,9 +60,11 @@ fit <- optimx(
 ```
 
 ```{r}
-library(VGAM)
 
-x <- coef(vglm(quality ~ 1 + alcohol + `volatile acidity` + `total sulfur dioxide` + pH + sulphates, data = complete_red,family= multinomial(refLevel = "8"))) %>% 
+
+x <- coef(vglm(quality ~ 1 + alcohol + `volatile acidity` + `total sulfur dioxide` + pH + sulphates, data = complete_red,family= multinomial(refLevel = "8"))) 
+
+%>% 
   matrix(ncol = ncol(X)) %>% 
   t() %>% 
   matrix(ncol = 1)
