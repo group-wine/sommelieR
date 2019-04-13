@@ -1,0 +1,21 @@
+#' Testing dataset of quality ratings for red wine
+#'
+#' A testing dataset containing the quality ratings and chemical characteristics of red wine.
+#'
+#' @format A data frame with 12 variables:
+#' \describe{
+#'   \item{fixed.acidity}{Fixed acidity.}
+#'   \item{volatile.acidity}{Volatile acidity}
+#'   \item{citric.acid}{Citric acid}
+#'   \item{residual.sugar}{Residual sugar}
+#'   \item{chlorides}{chlorides}
+#'   \item{free.sulfur.dioxide}{Free sulfur dioxide}
+#'   \item{total.sulfur.dioxide}{Total sulfur dioxide}
+#'   \item{density}{density}
+#'   \item{pH}{pH}
+#'   \item{sulphates}{sulphates}
+#'   \item{alcohol}{alcohol}
+#'   \item{quality}{quality score}
+#' }
+#' @source \url{http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/}
+"red_test"
