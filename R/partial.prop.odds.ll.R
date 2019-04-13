@@ -1,4 +1,20 @@
-#function to yield joint partial proportional odds model log likelihood
+#' A function to return the log likelihood for a partial proportional odds model
+#'
+#' This function returns the og likelihood for a partial proportional odds model. This function should not be used independently.
+#'
+#' @param y A vector of containing the values of an ordinal outcome variable.
+#' @param y.levels A vector of the unique, ordinal levels of y.
+#' @param in.data The input data object of type data frame or matrix.
+#' @param int.vector A vector of intercept estimates (one for each level of the outcome variable, except the top level). These need to be in the order of the levels of the outcome variable (from low to high).
+#' @param x.prop.odds A design martrix (no intercept) for the variables assumed to have proportional odds.
+#' @param x.non.prop.odds A design martrix (no intercept) for the variables assumed to not have proportional odds.
+#' @param beta.prop.odds A vector of beta values for each predictor assumed to have proportional odds.
+#' @param beta.non.prop.odds A matrix of beta values for each predictor assumed to not have proportional odds, where columns are the first j-1 levels of the ordinal outcome, and rows are betas.
+#'
+#' @return The log-likelihood for the model.
+#'
+#' @useDynLib sommelieR
+#' @export
 partial.prop.odds.ll <- function(y, y.levels, in.data, int.vector, x.prop.odds = NULL, x.non.prop.odds = NULL,
                                  beta.prop.odds = NULL, beta.non.prop.odds = NULL){
 
