@@ -8,7 +8,7 @@ Authors@R:
            email = "first.last@example.com")
 Description: The package fits a proportional odds model using two wine quality datasets. Wine quality is the response variable and several chemical components of wine are used to predict this outcome. Our proportional odds model is the compared with several machine learning tools to assess prediction accuracy.
 Depends: R (>= 3.4.0)
-Imports: dplyr, optimx
+Imports: dplyr, optimx, ggplot2
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
