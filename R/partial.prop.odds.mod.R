@@ -28,16 +28,15 @@
 #' @examples
 #'
 #' data(red_train)
-#' starts <- coef(lm(quality ~ alcohol+ pH + volatile.acidity + sulphates + total.sulfur.dioxide, data = red_train))
-#' test <- partial.prop.odds.mod(y ="quality", in.data = red_train,
-#' prop.odds.formula = ~ alcohol + pH+ volatile.acidity + sulphates,
-#' beta.prop.odds.start = starts[2:5],
-#' non.prop.odds.formula = ~total.sulfur.dioxide,
-#' beta.non.prop.odds.start = matrix(rep(starts[6], 5), nrow = 1),
+#' starts <- coef(lm(quality ~ alcohol+ pH + volatile.acidity, data = red_train))
+#' training.result <- partial.prop.odds.mod(y ="quality", in.data = red_train,
+#' prop.odds.formula = ~ alcohol + pH,
+#' beta.prop.odds.start = starts[2:3],
+#' non.prop.odds.formula = ~ volatile.acidity,
+#' beta.non.prop.odds.start = matrix(rep(starts[4], 5), nrow = 1),
 #' method = "BFGS",
 #' seed = c(14, 15), itnmax = 1000)
 #'
-#' @useDynLib sommelieR
 #' @export
 partial.prop.odds.mod <- function(y.name, in.data, prop.odds.formula = NULL, beta.prop.odds.start = NULL,
                                   non.prop.odds.formula = NULL, beta.non.prop.odds.start = NULL,
@@ -138,12 +137,12 @@ partial.prop.odds.mod <- function(y.name, in.data, prop.odds.formula = NULL, bet
 
   #starting value for intercepts
   #make intercepts start proportional to the level of y
-  cat.probs <- as.vector(by(in.data, in.data$quality, function(x) nrow(x))) / nrow(red)
+  cat.probs <- as.vector(by(in.data, in.data$quality, function(x) nrow(x))) / nrow(in.data)
   int.vector <- log(int.vec.scale*cumsum(cat.probs[1:(n.ylevels - 1)]))
 
 
   #maxmize parameter estimates
-  optim.result <- max.partial.prop.odds.ll(y = y, y.levels = y.levels, in.data = in.data, int.vector = int.vector, method = method,
+  optim.result <- maximize.partial.prop.odds.ll(y = y, y.levels = y.levels, in.data = in.data, int.vector = int.vector, method = method,
                                    x.prop.odds = x.prop.odds, x.non.prop.odds = x.non.prop.odds, beta.prop.odds = beta.prop.odds,
                                    beta.non.prop.odds = beta.non.prop.odds, itnmax = itnmax)
 

@@ -2,8 +2,9 @@
 #'
 #' This function takes a testing dataset and the output object from a partial proportional odds model fit on a training dataset, and predicts probabilities of each level of the outcome for each individual in the test data.
 #'
-#' @param training.result The output object from partial.prop.odds.mod run on a training dataset.
-#' @param test.data A test dataset to be used for predictions. The outcome for test data must have the exact same levels as the training dataset
+#' @param object The output object from partial.prop.odds.mod run on a training dataset.
+#' @param newdata A test dataset to be used for predictions. The outcome for test data must have the exact same levels as the training dataset
+#' @param ... Other parameters
 #'
 #' @return A matrix of predicted probabilities for each level of the ordinal outcome for each subject, where the subjects are rows and the levels of the outcome are columns.
 #'
@@ -11,26 +12,29 @@
 #'
 #' data(red_test)
 #' data(red_train)
-#' starts <- coef(lm(quality ~ alcohol+ pH + volatile.acidity + sulphates + total.sulfur.dioxide, data = red))
-#' test <- partial.prop.odds.mod(y ="quality", in.data = red_train,
-#' prop.odds.formula = ~ alcohol + pH+ volatile.acidity + sulphates,
-#' beta.prop.odds.start = starts[2:5],
-#' non.prop.odds.formula = ~total.sulfur.dioxide,
-#' beta.non.prop.odds.start = matrix(rep(starts[6], 5), nrow = 1),
+#' starts <- coef(lm(quality ~ alcohol+ pH + volatile.acidity, data = red_train))
+#' training.result <- partial.prop.odds.mod(y ="quality", in.data = red_train,
+#' prop.odds.formula = ~ alcohol + pH,
+#' beta.prop.odds.start = starts[2:3],
+#' non.prop.odds.formula = ~ volatile.acidity,
+#' beta.non.prop.odds.start = matrix(rep(starts[4], 5), nrow = 1),
 #' method = "BFGS",
 #' seed = c(14, 15), itnmax = 1000)
 #' predictions <- predict(training.result, red_test)
 #'
-#' @useDynLib sommelieR
+#' @importFrom stats model.matrix
+#' @importFrom stats plogis
+#' @importFrom stats rnorm
+#' @importFrom stats runif
 #' @export
-predict.partial.prop.odds <- function(training.result, test.data){
+predict.partial.prop.odds <- function(object, newdata, ...){
 
   ######################################################################
   #Arguments:
   #
-  #   training.result: the output object from partial.prop.odds.mod run
+  #   object: the output object from partial.prop.odds.mod run
   #             on a training data set
-  #   test.data: a test dataset to be used for predictions
+  #   newdata: a test dataset to be used for predictions
   #               Note that the outcome for test data must have
   #               the exact same levels as the training dataset
   #
@@ -43,37 +47,37 @@ predict.partial.prop.odds <- function(training.result, test.data){
 
   #confirm test data has the same outcome levels as the training data
 
-  y.new <- test.data[ , training.result$y.name]
+  y.new <- newdata[ , object$y.name]
   y.new.levels <- sort(unique(y.new))
-  if (! all(y.new.levels == training.result$y.levels)){
+  if (! all(y.new.levels == object$y.levels)){
 
     stop("The outcome in the test data does not have the same levels as the training data.")
 
   }
 
   #get design matrix and begin estimates for proportional odds predictors
-  if (!is.null(training.result$prop.odds.formula)){
+  if (!is.null(object$prop.odds.formula)){
 
-    x.prop.odds <- model.matrix(training.result$prop.odds.formula, test.data)
+    x.prop.odds <- model.matrix(object$prop.odds.formula, newdata)
 
     #get rid of intercept, we will specify these separately
     x.prop.odds <- x.prop.odds[ , ! colnames(x.prop.odds) == "(Intercept)", drop = F]
 
     #store for predictions
-    xb.prop.odds <- x.prop.odds %*% training.result$beta.hat.prop.odds
+    xb.prop.odds <- x.prop.odds %*% object$beta.hat.prop.odds
 
   }
 
-  if (! is.null(training.result$non.prop.odds.formula)){
+  if (! is.null(object$non.prop.odds.formula)){
 
-    x.non.prop.odds <- model.matrix(training.result$non.prop.odds.formula, test.data)
+    x.non.prop.odds <- model.matrix(object$non.prop.odds.formula, newdata)
 
     #get rid of intercept, we will specify these separately
     x.non.prop.odds <- x.non.prop.odds[ , ! colnames(x.non.prop.odds) == "(Intercept)", drop = F]
     n.non.prop.preds <- ncol(x.non.prop.odds)
 
     #store for predicting probabilities
-    xb.non.prop.odds <- x.non.prop.odds %*% training.result$beta.hat.non.prop.odds
+    xb.non.prop.odds <- x.non.prop.odds %*% object$beta.hat.non.prop.odds
 
   }
 
@@ -83,38 +87,38 @@ predict.partial.prop.odds <- function(training.result, test.data){
   top.minus1.level <- length(y.new.levels) - 1
   top.level <- length(y.new.levels)
 
-  if (! is.null(training.result$beta.hat.prop.odds) & ! is.null(training.result$beta.hat.non.prop.odds)){
+  if (! is.null(object$beta.hat.prop.odds) & ! is.null(object$beta.hat.non.prop.odds)){
 
-    top.level.prob <- 1 - plogis(training.result$intercepts[top.minus1.level] + xb.prop.odds +
+    top.level.prob <- 1 - plogis(object$intercepts[top.minus1.level] + xb.prop.odds +
                                    xb.non.prop.odds[ , top.minus1.level])
-    bottom.level.prob <- plogis(training.result$intercepts[1] + xb.prop.odds + xb.non.prop.odds[ , 1])
+    bottom.level.prob <- plogis(object$intercepts[1] + xb.prop.odds + xb.non.prop.odds[ , 1])
     middle.levels <- sapply(2:top.minus1.level, function(mid.level){
 
-      plogis(training.result$intercepts[mid.level] + xb.prop.odds + xb.non.prop.odds[ , mid.level]) -
-        plogis(training.result$intercepts[mid.level - 1] + xb.prop.odds + xb.non.prop.odds[ , mid.level - 1])
+      plogis(object$intercepts[mid.level] + xb.prop.odds + xb.non.prop.odds[ , mid.level]) -
+        plogis(object$intercepts[mid.level - 1] + xb.prop.odds + xb.non.prop.odds[ , mid.level - 1])
 
     })
 
 
-  } else if (! is.null(beta.prop.odds)){
+  } else if (! is.null(object$beta.hat.prop.odds)){
 
-    top.level.prob <- 1 - plogis(training.result$intercepts[top.minus1.level] +  xb.prop.odds)
-    bottom.level.prob <- plogis(training.result$intercepts[1] + xb.prop.odds)
+    top.level.prob <- 1 - plogis(object$intercepts[top.minus1.level] +  xb.prop.odds)
+    bottom.level.prob <- plogis(object$intercepts[1] + xb.prop.odds)
     middle.levels <- sapply(2:top.minus1.level, function(mid.level){
 
-      plogis(training.result$intercepts[mid.level] + xb.prop.odds) -
-        plogis(training.result$intercepts[mid.level - 1] + xb.prop.odds)
+      plogis(object$intercepts[mid.level] + xb.prop.odds) -
+        plogis(object$intercepts[mid.level - 1] + xb.prop.odds)
 
     })
 
-  } else if (! is.null(beta.non.prop.odds)){
+  } else if (! is.null(object$beta.hat.non.prop.odds)){
 
-    top.level.prob <- 1 - plogis(training.result$intercepts[top.minus1.level] + xb.non.prop.odds[ , top.minus1.level])
-    bottom.level.prob <- plogis(training.result$intercepts[1] + xb.non.prop.odds[ , 1])
+    top.level.prob <- 1 - plogis(object$intercepts[top.minus1.level] + xb.non.prop.odds[ , top.minus1.level])
+    bottom.level.prob <- plogis(object$intercepts[1] + xb.non.prop.odds[ , 1])
     middle.levels <- sapply(2:top.minus1.level, function(mid.level){
 
-      plogis(training.result$intercepts[mid.level] + xb.non.prop.odds[ , mid.level]) -
-        plogis(training.result$intercepts[mid.level - 1] + xb.non.prop.odds[ , mid.level - 1])
+      plogis(object$intercepts[mid.level] + xb.non.prop.odds[ , mid.level]) -
+        plogis(object$intercepts[mid.level - 1] + xb.non.prop.odds[ , mid.level - 1])
 
     })
 

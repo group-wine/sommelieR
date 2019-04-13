@@ -13,7 +13,6 @@
 #'
 #' @return The log-likelihood for the model.
 #'
-#' @useDynLib sommelieR
 #' @export
 partial.prop.odds.ll <- function(y, y.levels, in.data, int.vector, x.prop.odds = NULL, x.non.prop.odds = NULL,
                                  beta.prop.odds = NULL, beta.non.prop.odds = NULL){

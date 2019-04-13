@@ -7,7 +7,6 @@
 #'
 #' @return A matrix where the rows correspond to subjects and the columns correspond to levels of the outcome.
 #'
-#' @useDynLib sommelieR
 #' @export
 generate.multinomial <- function(y, y.levels){
 
