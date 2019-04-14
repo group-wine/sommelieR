@@ -1,12 +1,12 @@
 Package: sommelieR
-Title: Fitting an Ordinal Regression Model to Predict Wine Quality
-Version: 0.0.1
+Title: Fitting an Ordinal, Linear Regression Model to Predict Wine Quality
+Version: 0.0.2
 Authors@R: 
     person(given = "First",
            family = "Last",
            role = c("aut", "cre"),
            email = "first.last@example.com")
-Description: The package fits a proportional odds model using two wine quality datasets. Wine quality is the response variable and several chemical components of wine are used to predict this outcome. Our proportional odds model is the compared with several machine learning tools to assess prediction accuracy.
+Description: The package fits a proportional odds model and linear model using two wine quality datasets. Wine quality is the response variable and several chemical components of wine are used to predict this outcome. Our proportional odds model and linear model are compared with several machine learning tools to assess prediction accuracy.
 Depends: R (>= 3.4.0)
 Imports: dplyr, optimx, ggplot2
 License: GPL-2
