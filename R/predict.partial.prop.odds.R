@@ -124,7 +124,7 @@ predict.partial.prop.odds <- function(object, newdata, ...){
 
   }
 
-  probs <- data.frame(cbind(bottom.level.prob, middle.levels, top.level.prob), drop = F)
+  probs <- data.frame(cbind(bottom.level.prob, middle.levels, top.level.prob))
   colnames(probs) <- y.new.levels
   probs$most.likely <- apply(probs, 1, function(x) y.new.levels[which.max(x)])
   return(probs)
