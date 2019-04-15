@@ -14,7 +14,7 @@
 \item{...}{Other parameters}
 }
 \value{
-A matrix of predicted probabilities for each level of the ordinal outcome for each subject, where the subjects are rows and the levels of the outcome are columns.
+A data frame of predicted probabilities for each level of the ordinal outcome for each subject, where the subjects are rows and the levels of the outcome are columns. The final column is the most likely category.
 }
 \description{
 This function takes a testing dataset and the output object from a partial proportional odds model fit on a training dataset, and predicts probabilities of each level of the outcome for each individual in the test data.

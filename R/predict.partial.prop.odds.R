@@ -6,7 +6,7 @@
 #' @param newdata A test dataset to be used for predictions. The outcome for test data must have the exact same levels as the training dataset
 #' @param ... Other parameters
 #'
-#' @return A matrix of predicted probabilities for each level of the ordinal outcome for each subject, where the subjects are rows and the levels of the outcome are columns.
+#' @return A data frame of predicted probabilities for each level of the ordinal outcome for each subject, where the subjects are rows and the levels of the outcome are columns. The final column is the most likely category.
 #'
 #' @examples
 #'
@@ -124,7 +124,8 @@ predict.partial.prop.odds <- function(object, newdata, ...){
 
   }
 
-  probs <- cbind(bottom.level.prob, middle.levels, top.level.prob)
+  probs <- data.frame(cbind(bottom.level.prob, middle.levels, top.level.prob), drop = F)
   colnames(probs) <- y.new.levels
+  probs$most.likely <- apply(probs, 1, function(x) y.new.levels[which.max(x)])
   return(probs)
 }
