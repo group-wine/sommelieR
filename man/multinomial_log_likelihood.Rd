@@ -21,6 +21,3 @@ Given a matrix of responses, a design matrix, and a vector of beta coefficients
 (must be a vector to be compatible with optim), it will return the value of the
 log likelihood for multinomial regression.
 }
-\details{
-I should probably add the details of the assumptions of the model here.
-}

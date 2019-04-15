@@ -117,6 +117,7 @@ multinomial_log_likelihood <- function(y, X, b_vector){
 #' @param ref_level a character, the reference level of the multinomial model
 #' @param intercept default is TRUE, whether or not to include an intercept in the model
 #' @param method default is BFGS, argument is passed to optimx
+#' @param trace default is 0, passed to optimx
 #'
 #' @return the fitted estimates of the beta coefficients in multinomial regression
 #'
@@ -125,7 +126,8 @@ multinomial_log_likelihood <- function(y, X, b_vector){
 #' @export
 fit_multinomial_regression <- function(data, formula, ref_level,
                                        intercept = T,
-                                       method = "BFGS"
+                                       method = "BFGS",
+                                       trace = 0
                                       ){
   #1. data, which is a dataframe
 
@@ -154,7 +156,7 @@ fit_multinomial_regression <- function(data, formula, ref_level,
     hessian = F,
     method =  method,
     control = list(
-      trace = 1,
+      trace = trace,
       abstol = 10e-7,
       maximize = T
     )

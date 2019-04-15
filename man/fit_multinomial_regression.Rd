@@ -5,7 +5,7 @@
 \title{Fits multinomial regression through `optimx`}
 \usage{
 fit_multinomial_regression(data, formula, ref_level, intercept = T,
-  method = "BFGS")
+  method = "BFGS", trace = 0)
 }
 \arguments{
 \item{data}{a dataframe on which one would like to apply multinomial regression}
@@ -17,6 +17,8 @@ fit_multinomial_regression(data, formula, ref_level, intercept = T,
 \item{intercept}{default is TRUE, whether or not to include an intercept in the model}
 
 \item{method}{default is BFGS, argument is passed to optimx}
+
+\item{trace}{default is 0, passed to optimx}
 }
 \value{
 the fitted estimates of the beta coefficients in multinomial regression
@@ -25,4 +27,7 @@ the fitted estimates of the beta coefficients in multinomial regression
 Given a dataframe and a formula object, `fit_multinomial_regression` will run a
 user-specified algorithm to fit multinomial linear regression for a user specified
 reference level.
+}
+\details{
+I should probably add the details of the assumptions of the model here.
 }
