@@ -4,7 +4,7 @@
 \alias{predict.partial.prop.odds}
 \title{A function to predict probabilities for each level of an ordinal outcome for testing data using partial proportional odds model fit on training data.}
 \usage{
-predict.partial.prop.odds(object, newdata, ...)
+\method{predict}{partial.prop.odds}(object, newdata, ...)
 }
 \arguments{
 \item{object}{The output object from partial.prop.odds.mod run on a training dataset.}
