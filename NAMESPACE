@@ -3,6 +3,7 @@
 S3method(predict,partial.prop.odds)
 export(cmPlot)
 export(data_to_mulitnomial)
+export(fit_multinomial_regression)
 export(generate.multinomial)
 export(linear.mod)
 export(maximize.partial.prop.odds.ll)
