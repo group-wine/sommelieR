@@ -52,18 +52,20 @@ data_to_mulitnomial <- function(data, formula, ref_level = "8",intercept = T){
   return(list(multi_y, X))
 }
 
+#' Computes the log likelihood for multinomial regression
+#'
+#' Given a matrix of responses, a design matrix, and a vector of beta coefficients
+#' (must be a vector to be compatible with optim), it will return the value of the
+#' log likelihood for multinomial regression.
+#'
+#'
+#' @param y an (n x (k-1)) matrix for the dependent variable as created by the data_to_multinomial function, where k is the number of categories for y.
+#' @param X an (n x p) matrix where p is the number of predictors
+#' @param b_vector a (p*(k-1)) vector
+#'
+#' @return the value of the mulitnomial regression log-likelihood
+#'
 multinomial_log_likelihood <- function(y, X, b_vector){
-  #This function expects:
-
-  #y should be an (n x (k-1)) matrix for the dependent variable as created by the
-  #data_to_multinomial function, where k is the number of categories for y.
-
-  #X should be an (n x p) matrix, where p is the number of predictors
-
-  #4. b_vector, which should be a (p*(k-1) x 1) vector because the optim function
-  #expects the parameters on which we optimize to be in a vector.
-  #However, the function converts this vector to a (p x (k-1)) matrix initially
-  #for ease of programming.
 
   #Make b_vector into a matrix that is easier for calculations.
   beta <- matrix(b_vector, ncol = ncol(y))
@@ -102,9 +104,30 @@ multinomial_log_likelihood <- function(y, X, b_vector){
   return(l_n)
 }
 
-fit_multinomial_regression <- function(data, formula, ref_level = "8",
+#' Fits multinomial regression through `optimx`
+#'
+#' Given a dataframe and a formula object, `fit_multinomial_regression` will run a
+#' user-specified algorithm to fit multinomial linear regression for a user specified
+#' reference level.
+#'
+#' I should probably add the details of the assumptions of the model here.
+#'
+#' @param data a dataframe on which one would like to apply multinomial regression
+#' @param formula a formula obect - in the style of `lm` which fits mulitnomial regression
+#' @param ref_level a character, the reference level of the multinomial model
+#' @param intercept default is TRUE, whether or not to include an intercept in the model
+#' @param method default is BFGS, argument is passed to optimx
+#' @param trace default is 0, passed to optimx
+#'
+#' @return the fitted estimates of the beta coefficients in multinomial regression
+#'
+#' @importFrom optimx optimx
+#'
+#' @export
+fit_multinomial_regression <- function(data, formula, ref_level,
                                        intercept = T,
-                                       method = "BFGS"
+                                       method = "BFGS",
+                                       trace = 0
                                       ){
   #1. data, which is a dataframe
 
@@ -133,13 +156,14 @@ fit_multinomial_regression <- function(data, formula, ref_level = "8",
     hessian = F,
     method =  method,
     control = list(
-      trace = 1,
+      trace = trace,
       abstol = 10e-7,
       maximize = T
     )
   )
   #Get fitted betas
   beta_hat <- fit[1:(ncol(y) * ncol(X))]
+  return(beta_hat)
 }
 
 
