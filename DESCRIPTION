@@ -1,7 +1,8 @@
 Package: sommelieR
 Title: Fitting Linear, Multinomial, and Partial Proportional Odds Models to Predict Wine Quality
 Version: 0.0.2
-Authors: Seoyoon Cho, Paloma Hauser, Taylor Lagler, Mike Nodzenski, Bryce Rowland
+Author: Seoyoon Cho, Paloma Hauser, Taylor Lagler, Mike Nodzenski, Bryce Rowland
+Maintainer: Mike Nodzenski<michael.nodzenski@unc.edu>
 Description: The package fits a proportional odds model and linear model using two wine quality datasets. Wine quality is the response variable and several chemical components of wine are used to predict this outcome. Our proportional odds model and linear model are compared with several machine learning tools to assess prediction accuracy.
 Depends: R (>= 3.4.0)
 Imports: dplyr, optimx, ggplot2
