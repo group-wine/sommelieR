@@ -12,7 +12,7 @@ linear.mod(dat, intercept = TRUE)
 \item{intercept}{logical. whether to include the intercept or not. default is TRUE}
 }
 \value{
-A list of 
+A list of
 \item{betahat}{A vector of beta estimates from the linear regression model.}
 \item{yhat}{A vector of estimated response using the beta estimates from the model.}
 }
