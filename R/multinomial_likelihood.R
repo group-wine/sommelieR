@@ -172,14 +172,22 @@ fit_multinomial_regression <- function(data, formula, ref_level,
   )
   #Get fitted betas in matrix form
   beta_hat <- matrix(as.numeric(fit[1:(ncol(y) * ncol(X))]), nrow = ncol(X))
-  #Fitted values
-  # fitted_vals <- exp ( X %*% beta_hat) / (1 + rowSums(exp(X %*% beta_hat)))
-  # fitted_vals <- cbind(fitted_vals, 1 - rowSums(fitted_vals))
-  # colnames(fitted_vals) <- c(colnames(y), substitute(ref_level))
-  l <- list(beta_hat, formula)
+
+  l <- list(beta_hat, formula = formula, cat_names = colnames(y),
+            ref_level = ref_level)
   return(l)
 }
 
+predict_multinomial <- function(multi_fit, newdata){
 
+  X <- model.matrix(multi_fit[[2]], newdata)
+  beta_hat <- multi_fit[[1]]
+  # Fitted values
+  fitted_vals <- exp ( X %*% beta_hat) / (1 + rowSums(exp(X %*% beta_hat)))
+  fitted_vals <- cbind(fitted_vals, 1 - rowSums(fitted_vals))
+  colnames(fitted_vals) <- c(multi_fit$cat_names, multi_fit$ref_level)
+
+
+}
 
 
