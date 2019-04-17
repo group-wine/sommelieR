@@ -121,8 +121,12 @@ multinomial_log_likelihood <- function(y, X, b_vector){
 #' @param tol default is 10e-5, passed to optimx
 #' @param itters default is 200, passed to optimx
 #'
-#' @return the fitted estimates of the beta coefficients in multinomial regression
-#'
+#' @return
+#' @return a list containing:
+#' \itemize{
+#' \item the fitted estimates of the beta coefficients in multinomial regression
+#' \item The formula used to fit the model. Used to facilitate prediction.
+#' }
 #' @importFrom optimx optimx
 #'
 #' @export
@@ -167,9 +171,15 @@ fit_multinomial_regression <- function(data, formula, ref_level,
     )
   )
   #Get fitted betas in matrix form
-  beta_hat <- matrix(fit[1:(ncol(y) * ncol(X))], nrow = ncol(X))
-  return(beta_hat)
+  beta_hat <- matrix(as.numeric(fit[1:(ncol(y) * ncol(X))]), nrow = ncol(X))
+  #Fitted values
+  # fitted_vals <- exp ( X %*% beta_hat) / (1 + rowSums(exp(X %*% beta_hat)))
+  # fitted_vals <- cbind(fitted_vals, 1 - rowSums(fitted_vals))
+  # colnames(fitted_vals) <- c(colnames(y), substitute(ref_level))
+  l <- list(beta_hat, formula)
+  return(l)
 }
+
 
 
 

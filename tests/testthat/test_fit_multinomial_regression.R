@@ -14,15 +14,16 @@ test_that("Our estimates of beta are the same as the R standard",{
     coef() %>%
     matrix(ncol = 2) %>%
     t() %>%
-    matrix(ncol = 1)
+    matrix(nrow = 1)
 
   #Our fit
-  our_fit <- fit_multinomial_regression(data = red_train,
+  our_fit <- sommelieR::fit_multinomial_regression(data = red_train,
                                         quality ~ 1 + alcohol,
-                                        ref_level = "8")
+                                        ref_level = "8")[[1]] %>%
+    matrix(nrow = 1)
 
   #Compute Euclidian Distance
-  distance <- ((standard_fit - our_fit)^2) %>%
+  distance <- ((c(standard_fit) - c(our_fit))^2) %>%
     sum() %>% sqrt()
 
   expect_equal(distance, 0, tolerance = 0.1)
