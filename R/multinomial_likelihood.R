@@ -166,8 +166,8 @@ fit_multinomial_regression <- function(data, formula, ref_level,
       maximize = T
     )
   )
-  #Get fitted betas
-  beta_hat <- fit[1:(ncol(y) * ncol(X))]
+  #Get fitted betas in matrix form
+  beta_hat <- matrix(fit[1:(ncol(y) * ncol(X))], nrow = ncol(X))
   return(beta_hat)
 }
 
