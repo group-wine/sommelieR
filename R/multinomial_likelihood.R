@@ -121,7 +121,6 @@ multinomial_log_likelihood <- function(y, X, b_vector){
 #' @param tol default is 10e-5, passed to optimx
 #' @param itters default is 200, passed to optimx
 #'
-#' @return
 #' @return a list containing:
 #' \itemize{
 #' \item the fitted estimates of the beta coefficients in multinomial regression
