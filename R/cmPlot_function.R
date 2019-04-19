@@ -37,9 +37,10 @@ cmPlot <- function(cm, red_or_white, pred_first = TRUE, title, title.size = 20,
   cmPlot <- ggplot(cm, aes(x = Reference, y = Prediction, size = Freq, fill=Freq, label=Freq)) +
     scale_size(range=c(2,20)) + geom_label(na.rm = T) + theme_minimal() +
     scale_fill_continuous(low=lowcol, high=highcol) + guides(size=FALSE) +
-    ggtitle(title) + xlab("True Quality Rating") + ylab("Predicted Rating")
-    theme(plot.title = element_text(hjust=.5, size= title.size), axis.title = element_text(size = axis.title.size),
-          axis.text = element_text(size = axis.text.size))
+    ggtitle(title) + xlab("True Quality Rating") + ylab("Predicted Rating") +
+    theme(plot.title = element_text(hjust=.5, size= force(title.size)),
+          axis.title = element_text(size =force(axis.title.size)),
+          axis.text = element_text(size = force(axis.text.size)))
 
   return(cmPlot)
 }
