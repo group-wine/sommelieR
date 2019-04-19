@@ -180,14 +180,16 @@ fit_multinomial_regression <- function(data, formula, ref_level,
 
 predict_multinomial <- function(multi_fit, newdata){
 
-  X <- model.matrix(multi_fit[[2]], newdata)
+  X <- model.matrix(multi_fit$formula, newdata)
   beta_hat <- multi_fit[[1]]
   # Fitted values
   fitted_vals <- exp ( X %*% beta_hat) / (1 + rowSums(exp(X %*% beta_hat)))
   fitted_vals <- cbind(fitted_vals, 1 - rowSums(fitted_vals))
   colnames(fitted_vals) <- c(multi_fit$cat_names, multi_fit$ref_level)
 
-
+  prediction = colnames(fitted_vals)[apply(fitted_vals, 1,
+                                           function(x){which(x == max(x))})]
+  return(prediction)
 }
 
 
