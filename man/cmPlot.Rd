@@ -4,7 +4,8 @@
 \alias{cmPlot}
 \title{Visualize a Confusion Matrix (ggplot)}
 \usage{
-cmPlot(cm, red_or_white, pred_first = TRUE, title)
+cmPlot(cm, red_or_white, pred_first = TRUE, title, title.size = 20,
+  axis.title.size = 15, axis.text.size = 18)
 }
 \arguments{
 \item{cm}{a 3 column dataframe with columns for prediction and reference categroies and corresponding frequency counts (third column). 0 counts should be converted to NA}
@@ -14,6 +15,12 @@ cmPlot(cm, red_or_white, pred_first = TRUE, title)
 \item{pred_first}{logical, whether first column contains the prediction category (default is TRUE)}
 
 \item{title}{character string to be used as plot title}
+
+\item{title.size}{an integer controlling the size of the plot title. Defaults to 20.}
+
+\item{axis.title.size}{an integer controlling the size of axis titles. Defaults to 15.}
+
+\item{axis.text.size}{an integer controlling the size of axis text. Defaults to 18.}
 }
 \value{
 a ggplot object visualizing the confusion matrix of reference versus predicted

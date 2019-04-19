@@ -25,7 +25,11 @@ fit_multinomial_regression(data, formula, ref_level, intercept = T,
 \item{itters}{default is 200, passed to optimx}
 }
 \value{
-the fitted estimates of the beta coefficients in multinomial regression
+a list containing:
+\itemize{
+\item the fitted estimates of the beta coefficients in multinomial regression
+\item The formula used to fit the model. Used to facilitate prediction.
+}
 }
 \description{
 Given a dataframe and a formula object, `fit_multinomial_regression` will run a
