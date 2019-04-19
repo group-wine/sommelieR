@@ -177,6 +177,9 @@ fit_multinomial_regression <- function(data, formula, ref_level,
   return(l)
 }
 
+#' A function to do prediction with multinomial regression models
+#'
+#' @export
 predict_multinomial <- function(multi_fit, newdata){
 
   X <- model.matrix(multi_fit$formula, newdata)
