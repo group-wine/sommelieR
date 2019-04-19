@@ -8,13 +8,17 @@
 #' @param red_or_white character string c("red", "white") to specify plot coloring
 #' @param pred_first logical, whether first column contains the prediction category (default is TRUE)
 #' @param title character string to be used as plot title
+#' @param title.size an integer controlling the size of the plot title. Defaults to 20.
+#' @param axis.title.size an integer controlling the size of axis titles. Defaults to 15.
+#' @param axis.text.size an integer controlling the size of axis text. Defaults to 18.
 #'
 #' @return a ggplot object visualizing the confusion matrix of reference versus predicted
 #'
 #' @import ggplot2
 #'
 #' @export
-cmPlot <- function(cm, red_or_white, pred_first = TRUE, title){
+cmPlot <- function(cm, red_or_white, pred_first = TRUE, title, title.size = 20,
+                   axis.title.size = 15, axis.text.size = 18){
 
   if(red_or_white == "red"){
     lowcol = "pink1"
@@ -34,8 +38,8 @@ cmPlot <- function(cm, red_or_white, pred_first = TRUE, title){
     scale_size(range=c(2,20)) + geom_label(na.rm = T) + theme_minimal() +
     scale_fill_continuous(low=lowcol, high=highcol) + guides(size=FALSE) +
     ggtitle(title) + xlab("True Quality Rating") + ylab("Predicted Rating")
-    theme(plot.title = element_text(hjust=.5, size=20), axis.title = element_text(size = 15),
-          axis.text = element_text(size = 18))
+    theme(plot.title = element_text(hjust=.5, size= title.size), axis.title = element_text(size = axis.title.size),
+          axis.text = element_text(size = axis.text.size))
 
   return(cmPlot)
 }
