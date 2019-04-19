@@ -40,7 +40,9 @@ cmPlot <- function(cm, red_or_white, pred_first = TRUE, title, title.size = 20,
     ggtitle(title) + xlab("True Quality Rating") + ylab("Predicted Rating") +
     theme(plot.title = element_text(hjust=.5, size= force(title.size)),
           axis.title = element_text(size =force(axis.title.size)),
-          axis.text = element_text(size = force(axis.text.size)))
+          axis.text = element_text(size = force(axis.text.size)),
+          axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)),
+          axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
 
   return(cmPlot)
 }
