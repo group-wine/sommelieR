@@ -189,7 +189,7 @@ predict_multinomial <- function(multi_fit, newdata){
   fitted_vals <- cbind(fitted_vals, 1 - rowSums(fitted_vals))
   colnames(fitted_vals) <- c(multi_fit$cat_names, multi_fit$ref_level)
 
-  prediction = colnames(fitted_vals)[apply(fitted_vals, 1,
+  prediction <- colnames(fitted_vals)[apply(fitted_vals, 1,
                                            function(x){which(x == max(x))})]
   return(prediction)
 }
