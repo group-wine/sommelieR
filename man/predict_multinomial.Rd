@@ -6,6 +6,16 @@
 \usage{
 predict_multinomial(multi_fit, newdata)
 }
+\arguments{
+\item{multi_fit}{the output of fit_multinomial_regression}
+
+\item{newdata}{a dataframe for which you want predictions}
+}
+\value{
+a vector of predicted values
+}
 \description{
-A function to do prediction with multinomial regression models
+Given a the output of fit_multinomial_regression and new data,
+predict_multinomial predicts values for new data on the scale
+of the response.
 }

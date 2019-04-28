@@ -179,6 +179,15 @@ fit_multinomial_regression <- function(data, formula, ref_level,
 
 #' A function to do prediction with multinomial regression models
 #'
+#' Given a the output of fit_multinomial_regression and new data,
+#' predict_multinomial predicts values for new data on the scale
+#' of the response.
+#'
+#' @param multi_fit the output of fit_multinomial_regression
+#' @param newdata a dataframe for which you want predictions
+#'
+#' @return a vector of predicted values
+#'
 #' @export
 predict_multinomial <- function(multi_fit, newdata){
 
